@@ -22,7 +22,7 @@ export interface EmbeddingResponse {
   model: string
 }
 
-export interface EmbeddingError {
+export interface OpenAIError {
   code: string
   message: string
   type: 'api_error' | 'rate_limit' | 'invalid_request' | 'authentication'
