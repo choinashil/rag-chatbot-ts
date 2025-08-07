@@ -6,7 +6,7 @@ import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
 
 // 환경변수 로드
-dotenv.config();
+dotenv.config({ path: 'env/.env.dev' });
 
 // 라우트 임포트
 import { registerHealthRoutes } from './routes/health.routes';

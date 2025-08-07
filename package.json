@@ -12,7 +12,8 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "test": "jest tests/unit",
     "test:watch": "jest tests/unit --watch",
-    "test:coverage": "jest tests/unit --coverage"
+    "test:coverage": "jest tests/unit --coverage",
+    "test:notion": "tsx scripts/test-notion-integration.ts"
   },
   "keywords": [
     "rag",

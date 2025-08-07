@@ -118,4 +118,179 @@ describe('NotionService', () => {
       await expect(notionService.getPage('test-id')).rejects.toThrow('노션 서비스가 초기화되지 않았습니다')
     })
   })
+
+  describe('메서드 실제 동작 테스트', () => {
+    let initializedService: NotionService
+
+    beforeEach(async () => {
+      // 성공적인 초기화 모킹
+      mockNotionClient.users.me.mockResolvedValue({ id: 'test-user' })
+      initializedService = new NotionService(mockNotionConfig)
+      await initializedService.initialize()
+    })
+
+    describe('getPages() 동작', () => {
+      const mockDatabaseResponse = {
+        results: [
+          {
+            id: 'page-1',
+            object: 'page',
+            properties: {
+              title: {
+                type: 'title',
+                title: [{ plain_text: 'Test Page 1' }]
+              }
+            },
+            created_time: '2023-01-01T00:00:00.000Z',
+            last_edited_time: '2023-01-02T00:00:00.000Z',
+            url: 'https://notion.so/page-1'
+          },
+          {
+            id: 'page-2', 
+            object: 'page',
+            properties: {
+              title: {
+                type: 'title',
+                title: [{ plain_text: 'Test Page 2' }]
+              }
+            },
+            created_time: '2023-01-03T00:00:00.000Z',
+            last_edited_time: '2023-01-04T00:00:00.000Z',
+            url: 'https://notion.so/page-2'
+          }
+        ],
+        has_more: false,
+        next_cursor: null
+      }
+
+      test('전체 페이지 조회 성공', async () => {
+        mockNotionClient.databases.query.mockResolvedValue(mockDatabaseResponse)
+
+        const pages = await initializedService.getPages()
+
+        expect(pages).toHaveLength(2)
+        expect(pages[0]).toMatchObject({
+          id: 'page-1',
+          title: 'Test Page 1',
+          content: '',
+          url: 'https://notion.so/page-1'
+        })
+        expect(pages[1]).toMatchObject({
+          id: 'page-2', 
+          title: 'Test Page 2',
+          content: '',
+          url: 'https://notion.so/page-2'
+        })
+        
+        expect(mockNotionClient.databases.query).toHaveBeenCalledWith({
+          database_id: mockNotionConfig.databaseId,
+          filter: undefined,
+          page_size: 100
+        })
+      })
+
+      test('필터링 조회 성공', async () => {
+        const filter = { property: 'Status', select: { equals: 'Published' } }
+        mockNotionClient.databases.query.mockResolvedValue({
+          ...mockDatabaseResponse,
+          results: [mockDatabaseResponse.results[0]]
+        })
+
+        const pages = await initializedService.getPages(filter)
+
+        expect(pages).toHaveLength(1)
+        expect(mockNotionClient.databases.query).toHaveBeenCalledWith({
+          database_id: mockNotionConfig.databaseId,
+          filter: filter,
+          page_size: 100
+        })
+      })
+
+      test('빈 결과 처리', async () => {
+        mockNotionClient.databases.query.mockResolvedValue({
+          results: [],
+          has_more: false,
+          next_cursor: null
+        })
+
+        const pages = await initializedService.getPages()
+
+        expect(pages).toHaveLength(0)
+        expect(pages).toEqual([])
+      })
+
+      test('API 에러 처리', async () => {
+        mockNotionClient.databases.query.mockRejectedValue(new Error('Database not found'))
+
+        await expect(initializedService.getPages()).rejects.toThrow('노션 페이지를 조회할 수 없습니다')
+      })
+    })
+
+    describe('getPage() 동작', () => {
+      const mockPageResponse = {
+        id: 'page-1',
+        object: 'page',
+        properties: {
+          title: {
+            type: 'title',
+            title: [{ plain_text: 'Test Page Detail' }]
+          }
+        },
+        created_time: '2023-01-01T00:00:00.000Z',
+        last_edited_time: '2023-01-02T00:00:00.000Z',
+        url: 'https://notion.so/page-1'
+      }
+
+      const mockBlocksResponse = {
+        results: [
+          {
+            type: 'paragraph',
+            paragraph: {
+              rich_text: [{ plain_text: 'This is a test paragraph.' }]
+            }
+          },
+          {
+            type: 'heading_1',
+            heading_1: {
+              rich_text: [{ plain_text: 'Main Heading' }]
+            }
+          }
+        ]
+      }
+
+      test('페이지 상세 조회 성공', async () => {
+        mockNotionClient.pages.retrieve.mockResolvedValue(mockPageResponse)
+        mockNotionClient.blocks.children.list.mockResolvedValue(mockBlocksResponse)
+
+        const page = await initializedService.getPage('page-1')
+
+        expect(page).toMatchObject({
+          id: 'page-1',
+          title: 'Test Page Detail',
+          url: 'https://notion.so/page-1'
+        })
+        expect(page.content).toContain('This is a test paragraph.')
+        expect(page.content).toContain('# Main Heading')
+        
+        expect(mockNotionClient.pages.retrieve).toHaveBeenCalledWith({ page_id: 'page-1' })
+        expect(mockNotionClient.blocks.children.list).toHaveBeenCalledWith({
+          block_id: 'page-1',
+          page_size: 100
+        })
+      })
+
+      test('페이지 조회 API 에러 처리', async () => {
+        mockNotionClient.pages.retrieve.mockRejectedValue(new Error('Page not found'))
+
+        await expect(initializedService.getPage('invalid-id')).rejects.toThrow('노션 페이지 내용을 조회할 수 없습니다')
+      })
+
+      test('블록 조회 에러 처리', async () => {
+        mockNotionClient.pages.retrieve.mockResolvedValue(mockPageResponse)
+        mockNotionClient.blocks.children.list.mockRejectedValue(new Error('Blocks not accessible'))
+
+        await expect(initializedService.getPage('page-1')).rejects.toThrow('노션 페이지 내용을 조회할 수 없습니다')
+      })
+    })
+  })
 })
