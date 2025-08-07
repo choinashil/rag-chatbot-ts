@@ -18,6 +18,17 @@ export async function registerHealthRoutes(fastify: FastifyInstance): Promise<vo
         };
       }
 
+      // OpenAI 서비스 상태 확인
+      if (fastify.openaiClient) {
+        services.openai = fastify.openaiClient.getStatus();
+      } else {
+        services.openai = {
+          connected: false,
+          lastCheck: new Date().toISOString(),
+          error: '환경변수 미설정으로 비활성화됨'
+        };
+      }
+
       const healthStatus: HealthStatus = {
         status: 'healthy',
         timestamp: new Date().toISOString(),

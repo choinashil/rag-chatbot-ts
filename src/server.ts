@@ -14,6 +14,8 @@ import { registerHealthRoutes } from './routes/health.routes';
 // 서비스 임포트 (테스트용)
 import { NotionService } from './services/notion/notion.service';
 import { createNotionConfig } from './config/notion';
+import { OpenAIClient } from './services/openai/openai.client';
+import { createOpenAIConfig } from './config/openai';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000;
 
@@ -59,9 +61,21 @@ async function buildApp(): Promise<FastifyInstance> {
     console.log('노션 서비스 초기화 건너뜀 (환경변수 미설정):', (error as Error).message);
   }
 
+  let openaiClient: OpenAIClient | null = null;
+  try {
+    const openaiConfig = createOpenAIConfig();
+    openaiClient = new OpenAIClient(openaiConfig);
+    await openaiClient.initialize();
+  } catch (error) {
+    console.log('OpenAI 클라이언트 초기화 건너뜀 (환경변수 미설정):', (error as Error).message);
+  }
+
   // 서비스를 라우트에서 사용할 수 있도록 설정
   if (notionService) {
     app.decorate('notionService', notionService);
+  }
+  if (openaiClient) {
+    app.decorate('openaiClient', openaiClient);
   }
 
   // 라우트 등록
