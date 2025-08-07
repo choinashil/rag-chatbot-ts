@@ -11,6 +11,10 @@ dotenv.config();
 // 라우트 임포트
 import { registerHealthRoutes } from './routes/health.routes';
 
+// 서비스 임포트 (테스트용)
+import { NotionService } from './services/notion/notion.service';
+import { createNotionConfig } from './config/notion';
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000;
 
 async function buildApp(): Promise<FastifyInstance> {
@@ -44,6 +48,21 @@ async function buildApp(): Promise<FastifyInstance> {
   });
 
   // 정적 파일 서빙 제거 (별도 FE 프로젝트 예정)
+
+  // 서비스 초기화 (테스트용)
+  let notionService: NotionService | null = null;
+  try {
+    const notionConfig = createNotionConfig();
+    notionService = new NotionService(notionConfig);
+    await notionService.initialize();
+  } catch (error) {
+    console.log('노션 서비스 초기화 건너뜀 (환경변수 미설정):', (error as Error).message);
+  }
+
+  // 서비스를 라우트에서 사용할 수 있도록 설정
+  if (notionService) {
+    app.decorate('notionService', notionService);
+  }
 
   // 라우트 등록
   await app.register(registerHealthRoutes, { prefix: '/api' });

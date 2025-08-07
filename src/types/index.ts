@@ -1,20 +1,11 @@
-// 기본 타입 정의
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  timestamp: string;
-}
+// 공통 타입 export
+export * from './api'
+export * from './document'
+export * from './notion'
 
-export interface HealthStatus {
-  status: 'healthy' | 'unhealthy';
-  timestamp: string;
-  services: Record<string, any>;
-}
-
-export interface ErrorResponse {
-  success: false;
-  error: string;
-  code?: string;
-  timestamp: string;
+// Fastify 타입 확장
+declare module 'fastify' {
+  interface FastifyInstance {
+    notionService?: import('../services/notion/notion.service').NotionService;
+  }
 }

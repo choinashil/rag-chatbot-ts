@@ -5,10 +5,23 @@ export async function registerHealthRoutes(fastify: FastifyInstance): Promise<vo
   // 헬스체크 API 엔드포인트
   fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      // 노션 서비스 상태 확인
+      const services: Record<string, any> = {};
+      
+      if (fastify.notionService) {
+        services.notion = fastify.notionService.getStatus();
+      } else {
+        services.notion = {
+          connected: false,
+          lastCheck: new Date().toISOString(),
+          error: '환경변수 미설정으로 비활성화됨'
+        };
+      }
+
       const healthStatus: HealthStatus = {
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        services: {},
+        services,
       };
       
       const apiResponse: ApiResponse<HealthStatus> = {
