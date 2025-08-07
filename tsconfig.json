@@ -28,7 +28,8 @@
       "@/*": ["src/*"],
       "@/types/*": ["src/types/*"],
       "@/services/*": ["src/services/*"],
-      "@/utils/*": ["src/utils/*"]
+      "@/utils/*": ["src/utils/*"],
+      "@/server": ["src/server"]
     }
   },
   "include": [
@@ -36,8 +37,6 @@
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
+    "dist"
   ]
 }
