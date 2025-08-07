@@ -16,6 +16,9 @@ import { NotionService } from './services/notion/notion.service';
 import { createNotionConfig } from './config/notion';
 import { OpenAIClient } from './services/openai/openai.client';
 import { createOpenAIConfig } from './config/openai';
+import { PineconeService } from './services/pinecone/pinecone.service';
+import { PineconeClient } from './services/pinecone/pinecone.client';
+import { createPineconeConfig } from './config/pinecone';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000;
 
@@ -70,12 +73,25 @@ async function buildApp(): Promise<FastifyInstance> {
     console.log('OpenAI 클라이언트 초기화 건너뜀 (환경변수 미설정):', (error as Error).message);
   }
 
+  let pineconeService: PineconeService | null = null;
+  try {
+    const pineconeConfig = createPineconeConfig();
+    const pineconeClient = new PineconeClient(pineconeConfig);
+    pineconeService = new PineconeService(pineconeClient);
+    console.log('Pinecone 서비스 초기화 완료');
+  } catch (error) {
+    console.log('Pinecone 서비스 초기화 건너뜀 (환경변수 미설정):', (error as Error).message);
+  }
+
   // 서비스를 라우트에서 사용할 수 있도록 설정
   if (notionService) {
     app.decorate('notionService', notionService);
   }
   if (openaiClient) {
     app.decorate('openaiClient', openaiClient);
+  }
+  if (pineconeService) {
+    app.decorate('pineconeService', pineconeService);
   }
 
   // 라우트 등록

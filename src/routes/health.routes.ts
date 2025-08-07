@@ -29,6 +29,32 @@ export async function registerHealthRoutes(fastify: FastifyInstance): Promise<vo
         };
       }
 
+      // Pinecone 서비스 상태 확인
+      if (fastify.pineconeService) {
+        try {
+          const pineconeStatus = await fastify.pineconeService.client.checkConnection();
+          services.pinecone = {
+            connected: pineconeStatus.connected,
+            indexName: pineconeStatus.indexName,
+            vectorCount: pineconeStatus.vectorCount,
+            lastCheck: new Date().toISOString(),
+            error: pineconeStatus.error
+          };
+        } catch (error) {
+          services.pinecone = {
+            connected: false,
+            lastCheck: new Date().toISOString(),
+            error: error instanceof Error ? error.message : 'Pinecone 상태 확인 실패'
+          };
+        }
+      } else {
+        services.pinecone = {
+          connected: false,
+          lastCheck: new Date().toISOString(),
+          error: '환경변수 미설정으로 비활성화됨'
+        };
+      }
+
       const healthStatus: HealthStatus = {
         status: 'healthy',
         timestamp: new Date().toISOString(),
