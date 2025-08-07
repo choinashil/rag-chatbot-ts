@@ -1,5 +1,6 @@
 import type { NotionPage, NotionBlock } from '@/types/notion'
 import type { Document, DocumentSource, DocumentMetadata } from '@/types/document'
+import { NOTION_BLOCK_TYPES, NOTION_PROPERTY_TYPES } from './notion.constants'
 
 export class NotionMapper {
   /**
@@ -35,9 +36,81 @@ export class NotionMapper {
   /**
    * 노션 블록을 마크다운으로 변환
    */
-  static mapBlocksToMarkdown(blocks: NotionBlock[]): string {
-    // TODO: 노션 블록 → 마크다운 변환 로직 구현
-    return blocks.map(block => block.content).join('\n\n')
+  static blocksToMarkdown(blocks: any[]): string {
+    const markdown: string[] = []
+    
+    for (const block of blocks) {
+      if (!block.type) continue
+
+      switch (block.type) {
+        case NOTION_BLOCK_TYPES.PARAGRAPH:
+          if (block.paragraph?.rich_text) {
+            const text = this.extractRichText(block.paragraph.rich_text)
+            if (text.trim()) markdown.push(text)
+          }
+          break
+        case NOTION_BLOCK_TYPES.HEADING_1:
+          if (block.heading_1?.rich_text) {
+            const text = this.extractRichText(block.heading_1.rich_text)
+            if (text.trim()) markdown.push(`# ${text}`)
+          }
+          break
+        case NOTION_BLOCK_TYPES.HEADING_2:
+          if (block.heading_2?.rich_text) {
+            const text = this.extractRichText(block.heading_2.rich_text)
+            if (text.trim()) markdown.push(`## ${text}`)
+          }
+          break
+        case NOTION_BLOCK_TYPES.HEADING_3:
+          if (block.heading_3?.rich_text) {
+            const text = this.extractRichText(block.heading_3.rich_text)
+            if (text.trim()) markdown.push(`### ${text}`)
+          }
+          break
+        case NOTION_BLOCK_TYPES.BULLETED_LIST_ITEM:
+          if (block.bulleted_list_item?.rich_text) {
+            const text = this.extractRichText(block.bulleted_list_item.rich_text)
+            if (text.trim()) markdown.push(`- ${text}`)
+          }
+          break
+        case NOTION_BLOCK_TYPES.NUMBERED_LIST_ITEM:
+          if (block.numbered_list_item?.rich_text) {
+            const text = this.extractRichText(block.numbered_list_item.rich_text)
+            if (text.trim()) markdown.push(`1. ${text}`)
+          }
+          break
+      }
+    }
+    
+    return markdown.join('\n\n')
+  }
+
+  /**
+   * 노션 페이지 속성에서 제목 추출
+   */
+  static extractTitle(properties: any): string {
+    for (const [key, property] of Object.entries(properties)) {
+      if (property && typeof property === 'object' && 'type' in property) {
+        if (property.type === NOTION_PROPERTY_TYPES.TITLE && 'title' in property) {
+          const titleArray = property.title as any[]
+          if (titleArray && titleArray.length > 0 && titleArray[0].plain_text) {
+            return titleArray[0].plain_text
+          }
+        }
+      }
+    }
+    return 'Untitled'
+  }
+
+  /**
+   * 리치 텍스트에서 플레인 텍스트 추출
+   */
+  static extractRichText(richText: any[]): string {
+    if (!Array.isArray(richText)) return ''
+    
+    return richText
+      .map((text) => text.plain_text || '')
+      .join('')
   }
 
   /**

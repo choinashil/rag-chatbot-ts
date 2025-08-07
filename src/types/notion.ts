@@ -19,7 +19,6 @@ export interface NotionPage {
 }
 
 export interface NotionPageProperties {
-  title?: string
   status?: string
   tags?: string[]
   category?: string
@@ -32,11 +31,4 @@ export interface NotionBlock {
   type: string
   content: string
   children?: NotionBlock[]
-}
-
-export interface NotionQueryResult {
-  pages: NotionPage[]
-  hasMore: boolean
-  nextCursor?: string
-  totalCount: number
 }

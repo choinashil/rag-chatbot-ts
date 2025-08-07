@@ -114,12 +114,8 @@ describe('NotionService', () => {
       await expect(notionService.getPages()).rejects.toThrow('노션 서비스가 초기화되지 않았습니다')
     })
 
-    test('getPageContent() 호출 시 에러 발생', async () => {
-      await expect(notionService.getPageContent('test-id')).rejects.toThrow('노션 서비스가 초기화되지 않았습니다')
-    })
-
-    test('queryDatabase() 호출 시 에러 발생', async () => {
-      await expect(notionService.queryDatabase()).rejects.toThrow('노션 서비스가 초기화되지 않았습니다')
+    test('getPage() 호출 시 에러 발생', async () => {
+      await expect(notionService.getPage('test-id')).rejects.toThrow('노션 서비스가 초기화되지 않았습니다')
     })
   })
 })
