@@ -48,9 +48,12 @@ async function buildApp(): Promise<FastifyInstance> {
     timeWindow: '1 minute',
   });
 
-  // CORS 설정
+  // CORS 설정 (개발 환경에서 모든 origin 허용)
   await app.register(cors, {
     origin: process.env.NODE_ENV === 'production' ? false : true,
+    credentials: false,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
   });
 
   // 정적 파일 서빙 제거 (별도 FE 프로젝트 예정)
