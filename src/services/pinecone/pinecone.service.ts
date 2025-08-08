@@ -28,7 +28,7 @@ export class PineconeService {
         }
       }])
 
-      console.log(`벡터 저장 완료: ${vectorData.id}`)
+      console.log(`        💾 벡터 저장 완료: ${vectorData.id}`)
     } catch (error) {
       console.error('벡터 저장 실패:', error)
       throw new Error(`${PINECONE_ERRORS.UPSERT_FAILED}: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -86,6 +86,42 @@ export class PineconeService {
     } catch (error) {
       console.error('문서 삭제 실패:', error)
       throw new Error(`문서 삭제에 실패했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /**
+   * 인덱스의 모든 벡터 삭제
+   */
+  async deleteAll(namespace?: string): Promise<void> {
+    try {
+      if (namespace) {
+        // 특정 네임스페이스에 대한 Index 인스턴스 생성
+        const index = this.client.getIndex().namespace(namespace)
+        await index.deleteAll()
+        console.log(`모든 벡터 삭제 완료: 네임스페이스 "${namespace}"`)
+      } else {
+        // 기본 네임스페이스 삭제
+        const index = this.client.getIndex()
+        await index.deleteAll()
+        console.log('모든 벡터 삭제 완료: 기본 네임스페이스')
+      }
+    } catch (error) {
+      console.error('모든 벡터 삭제 실패:', error)
+      throw new Error(`벡터 인덱스 초기화에 실패했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /**
+   * 인덱스 통계 조회
+   */
+  async describeIndexStats(): Promise<any> {
+    try {
+      const index = this.client.getIndex()
+      const stats = await index.describeIndexStats()
+      return stats
+    } catch (error) {
+      console.error('인덱스 통계 조회 실패:', error)
+      throw new Error(`인덱스 통계 조회에 실패했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 

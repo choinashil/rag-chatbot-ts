@@ -54,7 +54,7 @@ export class NotionMapper {
   static blocksToMarkdown(blocks: any[]): string {
     const markdown: string[] = []
     
-    console.log(`블록 변환 시작: 총 ${blocks.length}개 블록`)
+    console.log(`        📝 블록 변환: ${blocks.length}개 블록 처리`)
     
     for (const block of blocks) {
       if (!block.type) {
@@ -132,9 +132,8 @@ export class NotionMapper {
       }
     }
     
-    console.log(`블록 변환 완료: ${markdown.length}개 텍스트 블록 추출`)
     const result = markdown.join('\n\n')
-    console.log(`최종 텍스트 길이: ${result.length}자`)
+    console.log(`        ✅ 텍스트 추출 완료: ${result.length}자 (${markdown.length}개 블록)`)
     
     return result
   }

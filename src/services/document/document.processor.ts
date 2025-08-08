@@ -74,11 +74,11 @@ export class DocumentProcessor {
     options: PageCollectionOptions = {}
   ): Promise<ProcessingResult> {
     try {
-      console.log(`페이지 기반 문서 처리 시작: ${rootPageId}`)
+      console.log(`  🔄 페이지 기반 문서 처리 시작: ${rootPageId}`)
 
       // 1. 노션에서 페이지 재귀 수집
       const collectionResult = await this.notionService.collectFromPage(rootPageId, options)
-      console.log(`페이지 수집 완료: ${collectionResult.totalPages}개`)
+      console.log(`  📄 ${collectionResult.totalPages}개 페이지 수집 완료, 벡터화 시작`)
 
       // 2. 수집된 페이지들을 벡터화하여 저장
       const processingResult: ProcessingResult = {
@@ -91,11 +91,13 @@ export class DocumentProcessor {
 
       for (const page of collectionResult.pages) {
         try {
+          console.log(`    [${index + 1}/${collectionResult.totalPages}] 벡터화 중: ${page.title}`)
           await this.processPageWithMetadata(page, 'page', options.currentDepth || 0)
+          console.log(`    ✅ 완료: ${page.title}`)
           processingResult.processedPages++
           processingResult.totalVectors++
         } catch (error) {
-          console.error(`페이지 처리 실패: ${page.title}`, error)
+          console.error(`    ❌ 실패: ${page.title} - ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
           processingResult.errors.push({
             pageId: page.id,
             title: page.title,
@@ -105,7 +107,7 @@ export class DocumentProcessor {
         }
       }
 
-      console.log(`✅ 페이지 기반 처리 완료: ${processingResult.processedPages}개 성공, ${processingResult.skippedPages}개 실패`)
+      console.log(`  ✅ 페이지 기반 처리 완료: ${processingResult.processedPages}개 성공, ${processingResult.skippedPages}개 실패`)
       return processingResult
     } catch (error) {
       console.error('페이지 기반 문서 처리 실패:', error)
@@ -185,7 +187,7 @@ export class DocumentProcessor {
 
       // Pinecone에 저장
       await this.pineconeService.upsert(vectorData)
-      console.log(`벡터 저장 완료: ${page.title} (깊이: ${depthLevel})`)
+      console.log(`        💾 벡터 저장 완료: ${page.title} (깊이: ${depthLevel})`)
 
     } catch (error) {
       console.error(`페이지 메타데이터 처리 실패: ${page.title}`, error)
@@ -205,7 +207,7 @@ export class DocumentProcessor {
    */
   private async processDatabaseMethod(databaseId: string): Promise<ProcessingResult> {
     try {
-      console.log(`데이터베이스 방식 처리 시작: ${databaseId}`)
+      console.log(`  📊 데이터베이스 방식 처리 시작: ${databaseId}`)
       
       const pages = await this.notionService.getPages()
       const result: ProcessingResult = {
@@ -218,13 +220,15 @@ export class DocumentProcessor {
 
       for (const page of pages) {
         try {
+          console.log(`    [${index + 1}/${pages.length}] 처리 중: ${page.title}`)
           // 페이지 상세 정보 조회 (내용 포함)
           const fullPage = await this.notionService.getPage(page.id)
           await this.processPageWithMetadata(fullPage, 'database', 0)
+          console.log(`    ✅ 완료: ${page.title}`)
           result.processedPages++
           result.totalVectors++
         } catch (error) {
-          console.error(`데이터베이스 페이지 처리 실패: ${page.title}`, error)
+          console.error(`    ❌ 실패: ${page.title} - ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
           result.errors.push({
             pageId: page.id,
             title: page.title,

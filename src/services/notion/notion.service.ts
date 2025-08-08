@@ -42,7 +42,7 @@ export class NotionService {
 
     try {
       const { filter, pageSize } = options || {}
-      const logMessage = filter ? '노션 데이터베이스 필터링 조회 시작' : '노션 데이터베이스 전체 조회 시작'
+      const logMessage = filter ? '    🔍 노션 데이터베이스 필터링 조회' : '    📊 노션 데이터베이스 전체 조회'
       console.log(`${logMessage}: ${databaseId}`)
       
       const queryParams: any = {
@@ -69,7 +69,7 @@ export class NotionService {
           url: page.url,
         }))
 
-      console.log(`노션 페이지 ${pages.length}개 조회 완료`)
+      console.log(`    ✅ ${pages.length}개 페이지 조회 완료`)
       return pages
     } catch (error) {
       console.error('노션 페이지 조회 실패:', error)
@@ -83,7 +83,7 @@ export class NotionService {
     }
 
     try {
-      console.log(`노션 페이지 상세 조회 시작: ${pageId}`)
+      console.log(`      📖 페이지 내용 조회: ${pageId}`)
       
       // 페이지 기본 정보 조회
       const page = await this.client.pages.retrieve({ page_id: pageId })
@@ -111,7 +111,7 @@ export class NotionService {
         url: page.url,
       }
 
-      console.log(`노션 페이지 상세 조회 완료: ${notionPage.title}`)
+      console.log(`      ✅ 페이지 내용 조회 완료: ${notionPage.title}`)
       return notionPage
     } catch (error) {
       console.error('노션 페이지 상세 조회 실패:', error)
@@ -138,7 +138,7 @@ export class NotionService {
 
     const mergedOptions = { ...defaultOptions, ...options }
     
-    console.log(`페이지 기반 수집 시작: ${rootPageId} (최대 깊이: ${mergedOptions.maxDepth})`)
+    console.log(`    🔄 페이지 기반 수집: ${rootPageId} (최대 깊이: ${mergedOptions.maxDepth})`)
     
     const result: PageCollectionResult = {
       pages: [],
@@ -235,7 +235,7 @@ export class NotionService {
     }
 
     try {
-      console.log(`페이지 블록 조회 시작: ${pageId}`)
+      console.log(`        📄 페이지 블록 조회: ${pageId}`)
       
       const response = await this.client.blocks.children.list({
         block_id: pageId,

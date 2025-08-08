@@ -44,7 +44,7 @@ export class EmbeddingService {
         ...(id && { id })
       }
 
-      console.log(`임베딩 생성 완료: ${result.tokenCount} 토큰, 모델: ${result.model}`)
+      console.log(`        🧠 임베딩 생성 완료: ${result.tokenCount} 토큰`)
       return result
     } catch (error) {
       console.error('임베딩 생성 실패:', error)
