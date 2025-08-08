@@ -20,7 +20,7 @@ import { createOpenAIConfig } from '../src/config/openai'
 import { createPineconeConfig } from '../src/config/pinecone'
 
 // 환경변수 로드
-dotenv.config({ path: 'env/.env.dev' })
+dotenv.config({ path: 'env/.env.integration' })
 
 async function testFullPipeline() {
   console.log('🚀 전체 RAG 파이프라인 테스트 시작...')

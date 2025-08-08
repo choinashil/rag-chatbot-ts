@@ -5,7 +5,7 @@ import { EmbeddingService } from '../src/services/openai/embedding.service'
 import { createOpenAIConfig } from '../src/config/openai'
 
 // 환경변수 로드
-dotenv.config({ path: 'env/.env.dev' })
+dotenv.config({ path: 'env/.env.integration' })
 
 async function testEmbeddingIntegration() {
   console.log('🔮 임베딩 서비스 통합 테스트 시작...\n')

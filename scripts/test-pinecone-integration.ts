@@ -18,7 +18,7 @@ import { createOpenAIConfig } from '../src/config/openai'
 import type { VectorData } from '../src/types/pinecone'
 
 // 환경변수 로드
-dotenv.config({ path: 'env/.env.dev' })
+dotenv.config({ path: 'env/.env.integration' })
 
 async function testPineconeIntegration() {
   console.log('🔄 Pinecone 통합 테스트 시작...')

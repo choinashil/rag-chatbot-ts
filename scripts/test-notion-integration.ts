@@ -5,7 +5,7 @@ import { NotionService } from '../src/services/notion/notion.service'
 import { createNotionConfig } from '../src/config/notion'
 
 // 환경변수 로드
-dotenv.config({ path: 'env/.env.dev' })
+dotenv.config({ path: 'env/.env.integration' })
 
 async function testNotionIntegration() {
   console.log('🔍 Notion API 연동 테스트 시작...\n')

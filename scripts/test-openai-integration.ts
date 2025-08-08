@@ -5,7 +5,7 @@ import { OpenAIClient } from '../src/services/openai/openai.client'
 import { createOpenAIConfig } from '../src/config/openai'
 
 // 환경변수 로드
-dotenv.config({ path: 'env/.env.dev' })
+dotenv.config({ path: 'env/.env.integration' })
 
 async function testOpenAIIntegration() {
   console.log('🤖 OpenAI API 연동 테스트 시작...\n')
