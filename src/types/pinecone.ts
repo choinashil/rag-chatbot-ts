@@ -17,6 +17,7 @@ export interface VectorMetadata {
   content: string
   source: string
   timestamp?: string
+  url?: string
 }
 
 export interface SearchResult {

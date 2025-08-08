@@ -17,7 +17,9 @@
     "test:openai": "tsx scripts/test-openai-integration.ts",
     "test:embedding": "tsx scripts/test-embedding-integration.ts",
     "test:pinecone": "tsx scripts/test-pinecone-integration.ts",
-    "test:full-pipeline": "tsx scripts/test-full-pipeline.ts"
+    "test:full-pipeline": "tsx scripts/test-full-pipeline.ts",
+    "test:rag-pipeline": "tsx scripts/test-rag-pipeline.ts",
+    "debug:vector-search": "tsx scripts/debug-vector-search.ts"
   },
   "keywords": [
     "rag",

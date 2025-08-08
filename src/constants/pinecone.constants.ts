@@ -3,7 +3,7 @@
 export const PINECONE_CONFIG = {
   DEFAULT_TIMEOUT: 30000, // 30초
   DEFAULT_TOP_K: 5, // 벡터 검색 시 반환할 최대 결과 개수 (상위 K개)
-  DEFAULT_SCORE_THRESHOLD: 0.7, // 유사도 점수 임계값 (0.0~1.0, 이 값 이상만 반환)
+  DEFAULT_SCORE_THRESHOLD: 0.3, // 유사도 점수 임계값
   VECTOR_DIMENSION: 1536 // text-embedding-3-small 차원
 } as const
 

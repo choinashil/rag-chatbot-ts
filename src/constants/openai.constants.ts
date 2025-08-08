@@ -11,7 +11,11 @@ export const OPENAI_DEFAULTS = {
   TIMEOUT: 30000, // 30초
   MAX_RETRIES: 3,
   EMBEDDING_DIMENSIONS: 1536,
-  MAX_TOKENS_EMBEDDING: 8191
+  MAX_TOKENS_EMBEDDING: 8191,
+  CHAT_TEMPERATURE: 0.7, // 기본 채팅 온도
+  CHAT_MAX_TOKENS: 1000, // 기본 최대 토큰
+  RAG_TEMPERATURE: 0.3, // RAG용 낮은 온도 (일관성 있는 답변)
+  RAG_MAX_TOKENS: 1000 // RAG용 최대 토큰
 } as const
 
 // 토큰 제한
