@@ -55,19 +55,41 @@ export class NotionService {
         queryParams.filter = filter
       }
       
-      const response = await this.client.databases.query(queryParams)
+      // pagination 지원으로 모든 페이지 수집
+      let allPages: any[] = []
+      let hasMore = true
+      let cursor: string | undefined
 
-      const pages = response.results
-        .filter((page) => 'properties' in page && page.object === 'page')
-        .map((page: any) => ({
-          id: page.id,
-          title: NotionMapper.extractTitle(page.properties),
-          content: '', // 기본 조회에서는 내용 제외
-          properties: {},
-          createdAt: new Date(page.created_time),
-          updatedAt: new Date(page.last_edited_time),
-          url: page.url,
-        }))
+      while (hasMore) {
+        const currentParams = { ...queryParams }
+        if (cursor) {
+          currentParams.start_cursor = cursor
+        }
+
+        const response = await this.client.databases.query(currentParams)
+        
+        const pageResults = response.results
+          .filter((page) => 'properties' in page && page.object === 'page')
+        
+        allPages = allPages.concat(pageResults)
+        
+        hasMore = response.has_more
+        cursor = response.next_cursor || undefined
+        
+        if (hasMore) {
+          console.log(`      📄 중간 결과: ${allPages.length}개 페이지 수집, 계속 조회 중...`)
+        }
+      }
+
+      const pages = allPages.map((page: any) => ({
+        id: page.id,
+        title: NotionMapper.extractTitle(page.properties),
+        content: '', // 기본 조회에서는 내용 제외
+        properties: {},
+        createdAt: new Date(page.created_time),
+        updatedAt: new Date(page.last_edited_time),
+        url: page.url,
+      }))
 
       console.log(`    ✅ ${pages.length}개 페이지 조회 완료`)
       return pages

@@ -89,7 +89,7 @@ export class DocumentProcessor {
         discoveredDatabases: collectionResult.discoveredDatabases
       }
 
-      for (const page of collectionResult.pages) {
+      for (const [index, page] of collectionResult.pages.entries()) {
         try {
           console.log(`    [${index + 1}/${collectionResult.totalPages}] 벡터화 중: ${page.title}`)
           await this.processPageWithMetadata(page, 'page', options.currentDepth || 0)
@@ -209,7 +209,7 @@ export class DocumentProcessor {
     try {
       console.log(`  📊 데이터베이스 방식 처리 시작: ${databaseId}`)
       
-      const pages = await this.notionService.getPages()
+      const pages = await this.notionService.getPagesFromDatabase(databaseId)
       const result: ProcessingResult = {
         processedPages: 0,
         skippedPages: 0,
@@ -218,7 +218,8 @@ export class DocumentProcessor {
         discoveredDatabases: [databaseId]
       }
 
-      for (const page of pages) {
+      console.log(`  📄 ${pages.length}개 페이지 처리 시작`)
+      for (const [index, page] of pages.entries()) {
         try {
           console.log(`    [${index + 1}/${pages.length}] 처리 중: ${page.title}`)
           // 페이지 상세 정보 조회 (내용 포함)

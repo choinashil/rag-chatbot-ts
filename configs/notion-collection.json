@@ -1,0 +1,19 @@
+{
+  "collections": [
+    {
+      "type": "database",
+      "id": "249fdde8c2ac8095b88fe24a46513171",
+      "name": "메인 노션 데이터베이스"
+    },
+    {
+      "type": "page",
+      "id": "249fdde8-c2ac-8041-868c-e483aaaad0d0",
+      "name": "호두 페이지 (재귀 수집)",
+      "options": {
+        "maxDepth": 3,
+        "includeDatabase": true,
+        "excludeEmpty": true
+      }
+    }
+  ]
+}

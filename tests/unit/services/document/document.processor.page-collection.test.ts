@@ -189,7 +189,7 @@ describe('DocumentProcessor - 페이지 기반 수집', () => {
     test('데이터베이스 방식 선택 시 processDatabaseMethod를 호출해야 한다', async () => {
       const databaseId = 'test-database-id'
       
-      mockNotionService.getPages.mockResolvedValue([mockPage])
+      mockNotionService.getPagesFromDatabase.mockResolvedValue([mockPage])
       mockNotionService.getPage.mockResolvedValue(mockPage)
       mockNotionService.getPageBlocks.mockResolvedValue(mockBlocks)
       mockEmbeddingService.createEmbedding.mockResolvedValue(mockEmbeddingResult)
@@ -197,7 +197,7 @@ describe('DocumentProcessor - 페이지 기반 수집', () => {
 
       const result = await documentProcessor.processCollectionMethod('database', databaseId)
 
-      expect(mockNotionService.getPages).toHaveBeenCalled()
+      expect(mockNotionService.getPagesFromDatabase).toHaveBeenCalledWith(databaseId)
       expect(mockNotionService.getPage).toHaveBeenCalledWith(mockPage.id)
       expect(result.processedPages).toBe(1)
       expect(result.discoveredDatabases).toEqual([databaseId])
