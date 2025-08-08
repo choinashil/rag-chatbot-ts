@@ -1,6 +1,7 @@
 // OpenAI 설정 관리
 import { OpenAIConfig } from '../types/openai'
 import { OPENAI_MODELS, OPENAI_DEFAULTS } from '../constants/openai.constants'
+import { SERVER_CONFIG } from '../constants/system.constants'
 
 /**
  * OpenAI 설정 객체 생성
@@ -49,12 +50,12 @@ export function validateOpenAIConfig(config: OpenAIConfig): boolean {
   }
 
   // 타임아웃 값 검증
-  if (config.timeout < 1000 || config.timeout > 300000) {
+  if (config.timeout < SERVER_CONFIG.TIMEOUT_CONFIG.MIN_TIMEOUT || config.timeout > SERVER_CONFIG.TIMEOUT_CONFIG.MAX_TIMEOUT) {
     throw new Error('타임아웃은 1초에서 5분 사이여야 합니다')
   }
 
   // 재시도 횟수 검증
-  if (config.maxRetries < 0 || config.maxRetries > 10) {
+  if (config.maxRetries < SERVER_CONFIG.RETRY_CONFIG.MIN_RETRIES || config.maxRetries > SERVER_CONFIG.RETRY_CONFIG.MAX_RETRIES) {
     throw new Error('재시도 횟수는 0에서 10 사이여야 합니다')
   }
 

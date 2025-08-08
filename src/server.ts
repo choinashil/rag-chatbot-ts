@@ -11,6 +11,7 @@ dotenv.config({ path: 'env/.env.dev' });
 // 라우트 임포트
 import { registerHealthRoutes } from './routes/health.routes';
 import { chatRoutes } from './routes';
+import { SERVER_CONFIG } from './constants/system.constants';
 
 // 서비스 임포트 (테스트용)
 import { NotionService } from './services/notion/notion.service';
@@ -44,7 +45,7 @@ async function buildApp(): Promise<FastifyInstance> {
   });
 
   await app.register(rateLimit, {
-    max: 100,
+    max: SERVER_CONFIG.RATE_LIMIT_MAX_REQUESTS,
     timeWindow: '1 minute',
   });
 
