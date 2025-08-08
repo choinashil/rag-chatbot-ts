@@ -6,10 +6,9 @@
  * 특정 노션 데이터베이스의 모든 페이지를 수집하고 
  * 벡터화하여 Pinecone에 저장합니다.
  * 
- * 사용법: npm run collect:database <database-id> [옵션]
+ * 사용법: npm run collect:database <database-id> --env=<dev|test|prod> [옵션]
  */
 
-import dotenv from 'dotenv'
 import { DocumentProcessor } from '../src/services/document/document.processor'
 import { NotionService } from '../src/services/notion/notion.service'
 import { EmbeddingService } from '../src/services/openai/embedding.service'
@@ -19,9 +18,7 @@ import { PineconeClient } from '../src/services/pinecone/pinecone.client'
 import { createNotionConfig } from '../src/config/notion'
 import { createOpenAIConfig } from '../src/config/openai'
 import { createPineconeConfig } from '../src/config/pinecone'
-
-// 환경변수 로드
-dotenv.config({ path: 'env/.env.integration' })
+import { parseEnvironment, loadEnvironment, getEnvironmentHelp } from './utils/env-loader'
 
 interface CliOptions {
   verbose?: boolean
@@ -31,12 +28,12 @@ interface CliOptions {
 function parseArgs(): { databaseId: string; options: CliOptions } {
   const args = process.argv.slice(2)
   
-  if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     console.log(`
 🗂️  노션 데이터베이스 기반 수집 도구
 
 사용법:
-  npm run collect:database <database-id> [옵션]
+  npm run collect:database <database-id> --env=<dev|test|prod> [옵션]
 
 필수 인자:
   <database-id>     노션 데이터베이스 ID
@@ -45,10 +42,11 @@ function parseArgs(): { databaseId: string; options: CliOptions } {
   --verbose         상세 로그 출력
   --dry-run         실제 저장 없이 수집만 테스트
   --help, -h        도움말 표시
-
+${getEnvironmentHelp()}
 예시:
-  npm run collect:database abc123-def456-ghi789
-  npm run collect:database abc123-def456-ghi789 --verbose --dry-run
+  npm run collect:database abc123-def456-ghi789 --env=dev
+  npm run collect:database abc123-def456-ghi789 --env=test --verbose --dry-run
+  npm run collect:database abc123-def456-ghi789 --env=prod
 `)
     process.exit(0)
   }
@@ -61,6 +59,10 @@ function parseArgs(): { databaseId: string; options: CliOptions } {
 
   for (let i = 1; i < args.length; i++) {
     const arg = args[i]
+    if (arg.startsWith('--env=')) {
+      // env 옵션은 env-loader에서 처리하므로 건너뜀
+      continue
+    }
     switch (arg) {
       case '--verbose':
         options.verbose = true
@@ -80,6 +82,10 @@ function parseArgs(): { databaseId: string; options: CliOptions } {
 async function main() {
   const startTime = Date.now()
   const { databaseId, options } = parseArgs()
+  
+  // 환경 설정 로드
+  const environment = parseEnvironment(process.argv.slice(2))
+  loadEnvironment(environment)
 
   console.log('🚀 데이터베이스 기반 수집 시작')
   console.log(`🗂️  데이터베이스: ${databaseId}`)

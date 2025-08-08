@@ -6,10 +6,10 @@
  * JSON 설정 파일을 기반으로 데이터베이스와 페이지 방식을 
  * 조합하여 수집하고 벡터화하여 Pinecone에 저장합니다.
  * 
- * 사용법: npm run collect:mixed <config-file-path> [옵션]
+ * 사용법: npm run collect:mixed <config-file-path> --env=<dev|test|prod> [옵션]
  */
 
-import dotenv from 'dotenv'
+import { parseEnvironment, loadEnvironment, getEnvironmentHelp } from './utils/env-loader'
 import { readFileSync } from 'fs'
 import { DocumentProcessor } from '../src/services/document/document.processor'
 import { NotionService } from '../src/services/notion/notion.service'
@@ -22,8 +22,6 @@ import { createOpenAIConfig } from '../src/config/openai'
 import { createPineconeConfig } from '../src/config/pinecone'
 import type { PageCollectionOptions } from '../src/types/notion'
 
-// 환경변수 로드
-dotenv.config({ path: 'env/.env.integration' })
 
 interface CollectionItem {
   type: 'database' | 'page'
@@ -49,7 +47,7 @@ function parseArgs(): { configPath: string; options: CliOptions } {
 🔀 노션 혼합 수집 도구
 
 사용법:
-  npm run collect:mixed [config-file-path] [옵션]
+  npm run collect:mixed [config-file-path] --env=<dev|test|prod> [옵션]
 
 선택 인자:
   [config-file-path]  수집 설정 JSON 파일 경로 (기본값: configs/notion-collection.json)
@@ -58,6 +56,7 @@ function parseArgs(): { configPath: string; options: CliOptions } {
   --verbose           상세 로그 출력
   --dry-run           실제 저장 없이 수집만 테스트
   --help, -h          도움말 표시
+${getEnvironmentHelp()}
 
 설정 파일 예시 (configs/notion-collection.json):
 {
@@ -71,9 +70,9 @@ function parseArgs(): { configPath: string; options: CliOptions } {
 }
 
 예시:
-  npm run collect:mixed                                # 기본 설정 파일 사용
-  npm run collect:mixed --dry-run --verbose           # 기본 설정으로 드라이런
-  npm run collect:mixed ./configs/my-custom.json      # 사용자 정의 설정 파일
+  npm run collect:mixed --env=dev                              # 기본 설정 파일 사용
+  npm run collect:mixed --env=test --dry-run --verbose        # 기본 설정으로 드라이런
+  npm run collect:mixed ./configs/my-custom.json --env=prod   # 사용자 정의 설정 파일
 `)
     process.exit(0)
   }
@@ -95,6 +94,10 @@ function parseArgs(): { configPath: string; options: CliOptions } {
 
   for (let i = startIndex; i < args.length; i++) {
     const arg = args[i]
+    if (arg.startsWith('--env=')) {
+      // env 옵션은 env-loader에서 처리하므로 건너뜀
+      continue
+    }
     switch (arg) {
       case '--verbose':
         options.verbose = true
@@ -155,6 +158,11 @@ function loadConfig(configPath: string): CollectionConfig {
 async function main() {
   const startTime = Date.now()
   const { configPath, options } = parseArgs()
+  
+  // 환경 설정 로드
+  const environment = parseEnvironment(process.argv.slice(2))
+  loadEnvironment(environment)
+  
   const config = loadConfig(configPath)
 
   console.log('🚀 혼합 수집 시작')

@@ -5,16 +5,13 @@
  * 
  * Pinecone 인덱스의 모든 벡터를 삭제하여 초기화합니다.
  * 
- * 사용법: npm run clear:vectors [옵션]
+ * 사용법: npm run clear:vectors --env=<dev|test|prod> [옵션]
  */
 
-import dotenv from 'dotenv'
 import { PineconeService } from '../src/services/pinecone/pinecone.service'
 import { PineconeClient } from '../src/services/pinecone/pinecone.client'
 import { createPineconeConfig } from '../src/config/pinecone'
-
-// 환경변수 로드
-dotenv.config({ path: 'env/.env.integration' })
+import { parseEnvironment, loadEnvironment, getEnvironmentHelp } from './utils/env-loader'
 
 interface CliOptions {
   verbose?: boolean
@@ -58,6 +55,10 @@ function parseArgs(): CliOptions {
   }
 
   for (const arg of args) {
+    if (arg.startsWith('--env=')) {
+      // env 옵션은 env-loader에서 처리하므로 건너뜀
+      continue
+    }
     switch (arg) {
       case '--verbose':
         options.verbose = true

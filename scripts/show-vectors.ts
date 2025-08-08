@@ -5,16 +5,14 @@
  * 
  * Pinecone 인덱스의 벡터 개수와 상태를 조회합니다.
  * 
- * 사용법: npm run show:vectors [옵션]
+ * 사용법: npm run show:vectors --env=<dev|test|prod> [옵션]
  */
 
-import dotenv from 'dotenv'
+import { parseEnvironment, loadEnvironment, getEnvironmentHelp } from './utils/env-loader'
 import { PineconeService } from '../src/services/pinecone/pinecone.service'
 import { PineconeClient } from '../src/services/pinecone/pinecone.client'
 import { createPineconeConfig } from '../src/config/pinecone'
 
-// 환경변수 로드
-dotenv.config({ path: 'env/.env.integration' })
 
 interface CliOptions {
   verbose?: boolean
@@ -28,15 +26,16 @@ function parseArgs(): CliOptions {
 📊 Pinecone 벡터 인덱스 상태 조회 도구
 
 사용법:
-  npm run show:vectors [옵션]
+  npm run show:vectors --env=<dev|test|prod> [옵션]
 
 옵션:
   --verbose           상세 정보 출력
   --help, -h          도움말 표시
+${getEnvironmentHelp()}
 
 예시:
-  npm run show:vectors                    # 기본 정보만 조회
-  npm run show:vectors --verbose          # 상세 정보까지 조회
+  npm run show:vectors --env=dev                    # 기본 정보만 조회
+  npm run show:vectors --env=test --verbose         # 상세 정보까지 조회
 `)
     process.exit(0)
   }
@@ -46,6 +45,11 @@ function parseArgs(): CliOptions {
   }
 
   for (const arg of args) {
+    if (arg.startsWith('--env=')) {
+      // env 옵션은 env-loader에서 처리하므로 건너뜀
+      continue
+    }
+    
     switch (arg) {
       case '--verbose':
         options.verbose = true
@@ -61,6 +65,10 @@ function parseArgs(): CliOptions {
 
 async function main() {
   const options = parseArgs()
+  
+  // 환경 설정 로드
+  const environment = parseEnvironment(process.argv.slice(2))
+  loadEnvironment(environment)
 
   console.log('📊 벡터 인덱스 상태 조회')
   console.log('')

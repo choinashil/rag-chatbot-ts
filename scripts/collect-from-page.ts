@@ -6,10 +6,9 @@
  * 특정 노션 페이지를 루트로 시작하여 모든 하위 페이지와 데이터베이스를 
  * 재귀적으로 수집하고 벡터화하여 Pinecone에 저장합니다.
  * 
- * 사용법: npm run collect:page <page-id> [옵션]
+ * 사용법: npm run collect:page <page-id> --env=<dev|test|prod> [옵션]
  */
 
-import dotenv from 'dotenv'
 import { DocumentProcessor } from '../src/services/document/document.processor'
 import { NotionService } from '../src/services/notion/notion.service'
 import { EmbeddingService } from '../src/services/openai/embedding.service'
@@ -20,9 +19,7 @@ import { createNotionConfig } from '../src/config/notion'
 import { createOpenAIConfig } from '../src/config/openai'
 import { createPineconeConfig } from '../src/config/pinecone'
 import type { PageCollectionOptions } from '../src/types/notion'
-
-// 환경변수 로드
-dotenv.config({ path: 'env/.env.integration' })
+import { parseEnvironment, loadEnvironment, getEnvironmentHelp } from './utils/env-loader'
 
 interface CliOptions extends PageCollectionOptions {
   verbose?: boolean
@@ -32,12 +29,12 @@ interface CliOptions extends PageCollectionOptions {
 function parseArgs(): { pageId: string; options: CliOptions } {
   const args = process.argv.slice(2)
   
-  if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     console.log(`
 📄 노션 페이지 기반 재귀 수집 도구
 
 사용법:
-  npm run collect:page <page-id> [옵션]
+  npm run collect:page <page-id> --env=<dev|test|prod> [옵션]
 
 필수 인자:
   <page-id>         노션 페이지 ID (루트 페이지)
@@ -49,11 +46,11 @@ function parseArgs(): { pageId: string; options: CliOptions } {
   --verbose         상세 로그 출력
   --dry-run         실제 저장 없이 수집만 테스트
   --help, -h        도움말 표시
-
+${getEnvironmentHelp()}
 예시:
-  npm run collect:page abc123-def456-ghi789
-  npm run collect:page abc123-def456-ghi789 --max-depth 5 --exclude-empty
-  npm run collect:page abc123-def456-ghi789 --verbose --dry-run
+  npm run collect:page abc123-def456-ghi789 --env=dev
+  npm run collect:page abc123-def456-ghi789 --env=test --max-depth 5 --exclude-empty
+  npm run collect:page abc123-def456-ghi789 --env=prod --verbose --dry-run
 `)
     process.exit(0)
   }
@@ -69,6 +66,10 @@ function parseArgs(): { pageId: string; options: CliOptions } {
 
   for (let i = 1; i < args.length; i++) {
     const arg = args[i]
+    if (arg.startsWith('--env=')) {
+      // env 옵션은 env-loader에서 처리하므로 건너뜀
+      continue
+    }
     switch (arg) {
       case '--max-depth':
         options.maxDepth = parseInt(args[++i], 10)
@@ -101,6 +102,10 @@ function parseArgs(): { pageId: string; options: CliOptions } {
 async function main() {
   const startTime = Date.now()
   const { pageId, options } = parseArgs()
+  
+  // 환경 설정 로드
+  const environment = parseEnvironment(process.argv.slice(2))
+  loadEnvironment(environment)
 
   console.log('🚀 페이지 기반 재귀 수집 시작')
   console.log(`📄 루트 페이지: ${pageId}`)
