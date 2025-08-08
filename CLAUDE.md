@@ -12,7 +12,7 @@ Express.js + JavaScript 기반 RAG 챗봇을 Fastify + TypeScript로 전환하�
   - 예: `2-database-selection.md`
 
 ### 2. 파일명 규칙
-- **순번**: 생성 순서대로 1, 2, 3... 부여
+- **순번**: `docs/decisions/` 폴더 내 기존 파일들을 확인하여 마지막 순번 + 1로 자동 부여
 - **주제**: 의사결정 주요 내용을 간결하게 표현 (영어, kebab-case)
 - 공통 주제 예시:
   - `framework-selection`: 프레임워크 선택
