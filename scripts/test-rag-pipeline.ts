@@ -50,7 +50,7 @@ async function testRAGPipeline() {
     console.log('✅ PineconeService 초기화 완료')
 
     // 2. RAG 서비스 생성
-    const ragService = new RAGService(embeddingService, pineconeService, chatService)
+    const ragService = new RAGService(embeddingService, pineconeService, chatService, openaiClient)
     console.log('✅ RAGService 생성 완료')
 
     // 3. 문서 처리기 생성 (테스트 데이터 준비용)

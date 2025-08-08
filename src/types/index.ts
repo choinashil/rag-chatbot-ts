@@ -6,6 +6,7 @@ export * from './openai'
 export * from './embedding'
 export * from './pinecone'
 export * from './rag'
+export * from './streaming'
 
 // Fastify 타입 확장
 declare module 'fastify' {

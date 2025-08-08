@@ -10,6 +10,7 @@ dotenv.config({ path: 'env/.env.dev' });
 
 // 라우트 임포트
 import { registerHealthRoutes } from './routes/health.routes';
+import { chatRoutes } from './routes';
 
 // 서비스 임포트 (테스트용)
 import { NotionService } from './services/notion/notion.service';
@@ -96,6 +97,7 @@ async function buildApp(): Promise<FastifyInstance> {
 
   // 라우트 등록
   await app.register(registerHealthRoutes, { prefix: '/api' });
+  await app.register(chatRoutes, { prefix: '/api/chat' });
 
   return app;
 }

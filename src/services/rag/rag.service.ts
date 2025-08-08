@@ -1,14 +1,16 @@
 import { EmbeddingService } from '../openai/embedding.service'
 import { PineconeService } from '../pinecone/pinecone.service'
 import { ChatService } from '../openai/chat.service'
-import type { RAGRequest, RAGResponse, RAGSource, RAGContext } from '../../types/rag'
+import { OpenAIClient } from '../openai/openai.client'
+import type { RAGRequest, RAGResponse, RAGSource, RAGContext, StreamingEvent, StreamingChatRequest } from '../../types'
 import { RAG_CONFIG, RAG_MESSAGES, OPENAI_MODELS } from '../../constants'
 
 export class RAGService {
   constructor(
     private embeddingService: EmbeddingService,
     private pineconeService: PineconeService,
-    private chatService: ChatService
+    private chatService: ChatService,
+    private openaiClient: OpenAIClient
   ) {}
 
   async askQuestion(request: RAGRequest): Promise<RAGResponse> {
@@ -119,5 +121,114 @@ ${context.combinedContent}
 6. 명확하고 간결하게 답변하세요
 
 답변:`
+  }
+
+  async* askQuestionStream(request: StreamingChatRequest): AsyncGenerator<StreamingEvent, void, unknown> {
+    const startTime = Date.now()
+
+    try {
+      yield {
+        type: 'status',
+        content: '질문 분석 중...',
+        data: { timestamp: new Date().toISOString() }
+      }
+
+      // 1. 질문을 임베딩으로 변환
+      const embeddingResult = await this.embeddingService.createEmbedding(request.message)
+      
+      yield {
+        type: 'status',
+        content: '관련 문서 검색 중...',
+        data: { timestamp: new Date().toISOString() }
+      }
+
+      // 2. 관련 문서 검색
+      const searchResults = await this.pineconeService.query(
+        embeddingResult.embedding,
+        {
+          topK: RAG_CONFIG.DEFAULT_TOP_K,
+          scoreThreshold: RAG_CONFIG.DEFAULT_SCORE_THRESHOLD
+        }
+      )
+
+      // 3. 검색 결과가 없으면 기본 응답
+      if (searchResults.length === 0) {
+        yield {
+          type: 'token',
+          content: RAG_MESSAGES.NO_RESULTS
+        }
+        
+        yield {
+          type: 'sources',
+          data: []
+        }
+        
+        yield { type: 'done' }
+        return
+      }
+
+      // 4. RAG 컨텍스트 구성
+      const context = this.buildContext(searchResults)
+      
+      yield {
+        type: 'status',
+        content: '답변 생성 중...',
+        data: { timestamp: new Date().toISOString() }
+      }
+
+      // 5. OpenAI 스트리밍 요청
+      const prompt = this.buildPrompt(request.message, context)
+      const client = this.openaiClient.getClient()
+      
+      const stream = await client.chat.completions.create({
+        model: OPENAI_MODELS.CHAT,
+        messages: [
+          {
+            role: 'system',
+            content: RAG_MESSAGES.SYSTEM_PROMPT
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: RAG_CONFIG.DEFAULT_TEMPERATURE,
+        stream: true
+      })
+
+      // 6. 스트리밍 토큰 전송
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content
+        if (content) {
+          yield {
+            type: 'token',
+            content: content
+          }
+        }
+      }
+
+      // 7. 출처 정보 전송
+      yield {
+        type: 'sources',
+        data: context.sources
+      }
+
+      // 8. 완료 신호
+      yield {
+        type: 'done',
+        data: {
+          processingTime: Date.now() - startTime,
+          timestamp: new Date().toISOString()
+        }
+      }
+
+    } catch (error) {
+      console.error('스트리밍 RAG 질의 처리 실패:', error)
+      yield {
+        type: 'error',
+        content: `질의를 처리할 수 없습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
+        data: { timestamp: new Date().toISOString() }
+      }
+    }
   }
 }

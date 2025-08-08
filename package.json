@@ -19,6 +19,7 @@
     "test:pinecone": "tsx scripts/test-pinecone-integration.ts",
     "test:full-pipeline": "tsx scripts/test-full-pipeline.ts",
     "test:rag-pipeline": "tsx scripts/test-rag-pipeline.ts",
+    "test:streaming-api": "tsx scripts/test-streaming-api.ts",
     "debug:vector-search": "tsx scripts/debug-vector-search.ts"
   },
   "keywords": [
@@ -56,6 +57,7 @@
     "@types/node": "^24.2.0",
     "@typescript-eslint/eslint-plugin": "^8.5.0",
     "@typescript-eslint/parser": "^8.5.0",
+    "axios": "^1.11.0",
     "eslint": "^9.10.0",
     "jest": "^29.7.0",
     "pino-pretty": "^13.1.1",

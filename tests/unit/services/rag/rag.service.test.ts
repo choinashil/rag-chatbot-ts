@@ -2,6 +2,7 @@ import { RAGService } from '../../../../src/services/rag/rag.service'
 import { EmbeddingService } from '../../../../src/services/openai/embedding.service'
 import { PineconeService } from '../../../../src/services/pinecone/pinecone.service'
 import { ChatService } from '../../../../src/services/openai/chat.service'
+import { OpenAIClient } from '../../../../src/services/openai/openai.client'
 import type { EmbeddingResult } from '../../../../src/types/embedding'
 import type { SearchResult } from '../../../../src/types/pinecone'
 
@@ -9,16 +10,19 @@ import type { SearchResult } from '../../../../src/types/pinecone'
 jest.mock('../../../../src/services/openai/embedding.service')
 jest.mock('../../../../src/services/pinecone/pinecone.service')
 jest.mock('../../../../src/services/openai/chat.service')
+jest.mock('../../../../src/services/openai/openai.client')
 
 const MockEmbeddingService = EmbeddingService as jest.MockedClass<typeof EmbeddingService>
 const MockPineconeService = PineconeService as jest.MockedClass<typeof PineconeService>
 const MockChatService = ChatService as jest.MockedClass<typeof ChatService>
+const MockOpenAIClient = OpenAIClient as jest.MockedClass<typeof OpenAIClient>
 
 describe('RAGService', () => {
   let ragService: RAGService
   let mockEmbeddingService: jest.Mocked<EmbeddingService>
   let mockPineconeService: jest.Mocked<PineconeService>
   let mockChatService: jest.Mocked<ChatService>
+  let mockOpenAIClient: jest.Mocked<OpenAIClient>
 
   beforeEach(() => {
     mockEmbeddingService = {
@@ -33,10 +37,15 @@ describe('RAGService', () => {
       generateResponse: jest.fn()
     } as any
 
+    mockOpenAIClient = {
+      getClient: jest.fn()
+    } as any
+
     ragService = new RAGService(
       mockEmbeddingService,
       mockPineconeService,
-      mockChatService
+      mockChatService,
+      mockOpenAIClient
     )
   })
 
@@ -341,6 +350,134 @@ describe('RAGService', () => {
       const result = await ragService.askQuestion(request)
 
       expect(result.sources[0]?.title).toBe('제목 없음')
+    })
+  })
+
+  describe('askQuestionStream', () => {
+    test('성공적인 스트리밍 질의응답 플로우', async () => {
+      // Mock 데이터 준비
+      const mockEmbeddingResult: EmbeddingResult = {
+        embedding: new Array(1536).fill(0.1),
+        tokenCount: 5,
+        model: 'text-embedding-3-small',
+        text: '스트리밍 테스트'
+      }
+
+      const mockSearchResults: SearchResult[] = [
+        {
+          id: 'stream-page-1',
+          score: 0.95,
+          metadata: {
+            title: '스트리밍 테스트',
+            content: '실시간으로 답변을 스트리밍합니다.',
+            source: 'notion',
+            timestamp: '2025-08-08T14:30:00Z'
+          }
+        }
+      ]
+
+      // OpenAI 스트리밍 mock (AsyncIterable)
+      const mockStreamChunks = [
+        { choices: [{ delta: { content: '안녕' } }] },
+        { choices: [{ delta: { content: '하세요' } }] },
+        { choices: [{ delta: { content: '!' } }] }
+      ]
+
+      // AsyncIterable 구현
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          for (const chunk of mockStreamChunks) {
+            yield chunk
+          }
+        }
+      }
+
+      mockEmbeddingService.createEmbedding.mockResolvedValue(mockEmbeddingResult)
+      mockPineconeService.query.mockResolvedValue(mockSearchResults)
+      
+      // OpenAI 클라이언트 mock 설정
+      const mockOpenAIInstance = {
+        chat: {
+          completions: {
+            create: jest.fn().mockResolvedValue(mockStream)
+          }
+        }
+      }
+      mockOpenAIClient.getClient.mockReturnValue(mockOpenAIInstance as any)
+
+      // 스트리밍 테스트 실행
+      const request = { message: '스트리밍 테스트 질문' }
+      const events: any[] = []
+
+      for await (const event of ragService.askQuestionStream(request)) {
+        events.push(event)
+      }
+
+      // 검증
+      expect(mockEmbeddingService.createEmbedding).toHaveBeenCalledWith('스트리밍 테스트 질문')
+      expect(mockPineconeService.query).toHaveBeenCalledWith(
+        mockEmbeddingResult.embedding,
+        {
+          topK: 3,
+          scoreThreshold: 0.3
+        }
+      )
+
+      // 이벤트 순서 검증
+      expect(events).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ type: 'status', content: '질문 분석 중...' }),
+          expect.objectContaining({ type: 'status', content: '관련 문서 검색 중...' }),
+          expect.objectContaining({ type: 'status', content: '답변 생성 중...' }),
+          expect.objectContaining({ type: 'sources' }),
+          expect.objectContaining({ type: 'done' })
+        ])
+      )
+    })
+
+    test('검색 결과 없을 때 기본 응답 스트리밍', async () => {
+      const mockEmbeddingResult: EmbeddingResult = {
+        embedding: new Array(1536).fill(0.1),
+        tokenCount: 3,
+        model: 'text-embedding-3-small',
+        text: '존재하지 않는 질문'
+      }
+
+      mockEmbeddingService.createEmbedding.mockResolvedValue(mockEmbeddingResult)
+      mockPineconeService.query.mockResolvedValue([])
+
+      const request = { message: '존재하지 않는 질문' }
+      const events: any[] = []
+
+      for await (const event of ragService.askQuestionStream(request)) {
+        events.push(event)
+      }
+
+      // 기본 응답 검증
+      const tokenEvent = events.find(e => e.type === 'token')
+      expect(tokenEvent?.content).toBe('죄송합니다. 관련된 정보를 찾을 수 없습니다. 다른 질문을 시도해보세요.')
+
+      const sourcesEvent = events.find(e => e.type === 'sources')
+      expect(sourcesEvent?.data).toEqual([])
+
+      const doneEvent = events.find(e => e.type === 'done')
+      expect(doneEvent).toBeDefined()
+    })
+
+    test('스트리밍 중 에러 발생 시 에러 이벤트 전송', async () => {
+      mockEmbeddingService.createEmbedding.mockRejectedValue(new Error('임베딩 생성 실패'))
+
+      const request = { message: '에러 테스트' }
+      const events: any[] = []
+
+      for await (const event of ragService.askQuestionStream(request)) {
+        events.push(event)
+      }
+
+      // 에러 이벤트 검증
+      const errorEvent = events.find(e => e.type === 'error')
+      expect(errorEvent).toBeDefined()
+      expect(errorEvent?.content).toContain('질의를 처리할 수 없습니다')
     })
   })
 })
