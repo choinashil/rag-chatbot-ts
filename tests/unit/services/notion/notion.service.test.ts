@@ -196,7 +196,7 @@ describe('NotionService', () => {
           results: [mockDatabaseResponse.results[0]]
         })
 
-        const pages = await initializedService.getPages(filter)
+        const pages = await initializedService.getPages({ filter })
 
         expect(pages).toHaveLength(1)
         expect(mockNotionClient.databases.query).toHaveBeenCalledWith({

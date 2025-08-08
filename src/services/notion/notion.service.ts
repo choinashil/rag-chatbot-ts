@@ -28,20 +28,27 @@ export class NotionService {
     }
   }
 
-  async getPages(filter?: any): Promise<NotionPage[]> {
+  async getPages(options?: { filter?: any; pageSize?: number }): Promise<NotionPage[]> {
     if (!this.isInitialized) {
       throw new Error('노션 서비스가 초기화되지 않았습니다')
     }
 
     try {
+      const { filter, pageSize } = options || {}
       const logMessage = filter ? '노션 데이터베이스 필터링 조회 시작' : '노션 데이터베이스 전체 조회 시작'
       console.log(`${logMessage}: ${this.config.databaseId}`)
       
-      const response = await this.client.databases.query({
+      const queryParams: any = {
         database_id: this.config.databaseId,
-        filter: filter,
-        page_size: MAX_NOTION_PAGE_SIZE,
-      })
+        page_size: pageSize || MAX_NOTION_PAGE_SIZE,
+      }
+      
+      // filter가 제공된 경우에만 추가
+      if (filter) {
+        queryParams.filter = filter
+      }
+      
+      const response = await this.client.databases.query(queryParams)
 
       const pages = response.results
         .filter((page) => 'properties' in page && page.object === 'page')

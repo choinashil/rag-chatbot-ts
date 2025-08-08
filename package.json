@@ -16,7 +16,8 @@
     "test:notion": "tsx scripts/test-notion-integration.ts",
     "test:openai": "tsx scripts/test-openai-integration.ts",
     "test:embedding": "tsx scripts/test-embedding-integration.ts",
-    "test:pinecone": "tsx scripts/test-pinecone-integration.ts"
+    "test:pinecone": "tsx scripts/test-pinecone-integration.ts",
+    "test:full-pipeline": "tsx scripts/test-full-pipeline.ts"
   },
   "keywords": [
     "rag",
