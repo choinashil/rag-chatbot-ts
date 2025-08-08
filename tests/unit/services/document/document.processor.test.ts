@@ -75,7 +75,7 @@ describe('DocumentProcessor', () => {
       await documentProcessor.processDocument('page-123')
       expect(mockNotionService.getPage).toHaveBeenCalledWith('page-123')
       expect(mockEmbeddingService.createEmbedding).toHaveBeenCalledWith(
-        '이것은 테스트 문서입니다.',
+        '테스트 문서\n\n이것은 테스트 문서입니다.',
         'notion-page-123'
       )
       expect(mockPineconeService.upsert).toHaveBeenCalledWith({

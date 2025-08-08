@@ -114,24 +114,24 @@ describe('NotionMapper', () => {
       expect(result).toBe('Valid content')
     })
 
-    test('지원하지 않는 블록 타입 무시', () => {
+    test('지원하지 않는 블록 타입에서도 텍스트 추출', () => {
       const blocks = [
         {
           type: 'unsupported_block',
           unsupported_block: {
-            rich_text: [{ plain_text: 'This should be ignored' }]
+            rich_text: [{ plain_text: 'This should be included' }]
           }
         },
         {
           type: 'paragraph',
           paragraph: {
-            rich_text: [{ plain_text: 'This should be included' }]
+            rich_text: [{ plain_text: 'This should also be included' }]
           }
         }
       ]
 
       const result = NotionMapper.blocksToMarkdown(blocks)
-      expect(result).toBe('This should be included')
+      expect(result).toBe('This should be included\n\nThis should also be included')
     })
 
     test('type 속성이 없는 블록 무시', () => {

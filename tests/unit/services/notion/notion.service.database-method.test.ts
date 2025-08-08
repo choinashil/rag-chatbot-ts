@@ -20,7 +20,8 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
       const mockPages = [
         {
           id: 'page-1',
-          properties: { title: { title: [{ plain_text: 'Page 1' }] } },
+          object: 'page',
+          properties: { title: { type: 'title', title: [{ plain_text: 'Page 1' }] } },
           created_time: '2025-01-08T12:00:00.000Z',
           last_edited_time: '2025-01-08T12:00:00.000Z',
           url: 'https://notion.so/page-1'
