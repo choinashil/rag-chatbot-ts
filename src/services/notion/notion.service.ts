@@ -1,7 +1,7 @@
 import { Client } from '@notionhq/client'
-import type { NotionConfig, NotionPage } from '@/types/notion'
+import type { NotionConfig, NotionPage, PageCollectionOptions, PageCollectionResult } from '@/types/notion'
 import type { ServiceStatus } from '@/types/api'
-import { MAX_NOTION_PAGE_SIZE } from './notion.constants'
+import { MAX_NOTION_PAGE_SIZE, PAGE_COLLECTION_DEFAULTS } from './notion.constants'
 import { NotionMapper } from './notion.mapper'
 
 export class NotionService {
@@ -29,6 +29,13 @@ export class NotionService {
   }
 
   async getPages(options?: { filter?: any; pageSize?: number }): Promise<NotionPage[]> {
+    return this.getPagesFromDatabase(this.config.databaseId, options)
+  }
+
+  /**
+   * 특정 데이터베이스에서 페이지 조회 (설정 변경 없이)
+   */
+  async getPagesFromDatabase(databaseId: string, options?: { filter?: any; pageSize?: number }): Promise<NotionPage[]> {
     if (!this.isInitialized) {
       throw new Error('노션 서비스가 초기화되지 않았습니다')
     }
@@ -36,10 +43,10 @@ export class NotionService {
     try {
       const { filter, pageSize } = options || {}
       const logMessage = filter ? '노션 데이터베이스 필터링 조회 시작' : '노션 데이터베이스 전체 조회 시작'
-      console.log(`${logMessage}: ${this.config.databaseId}`)
+      console.log(`${logMessage}: ${databaseId}`)
       
       const queryParams: any = {
-        database_id: this.config.databaseId,
+        database_id: databaseId,
         page_size: pageSize || MAX_NOTION_PAGE_SIZE,
       }
       
@@ -113,14 +120,245 @@ export class NotionService {
   }
 
 
-  getStatus(): ServiceStatus {
-    return {
-      connected: this.isInitialized,
-      lastCheck: new Date().toISOString(),
-      metadata: {
-        databaseId: this.config.databaseId,
-        timeout: this.config.timeout,
+  async collectFromPage(
+    rootPageId: string, 
+    options: PageCollectionOptions = {}
+  ): Promise<PageCollectionResult> {
+    if (!this.isInitialized) {
+      throw new Error('노션 서비스가 초기화되지 않았습니다')
+    }
+
+    const defaultOptions: Required<PageCollectionOptions> = {
+      maxDepth: PAGE_COLLECTION_DEFAULTS.MAX_DEPTH,
+      includeDatabase: PAGE_COLLECTION_DEFAULTS.INCLUDE_DATABASE,
+      excludeEmpty: PAGE_COLLECTION_DEFAULTS.EXCLUDE_EMPTY,
+      visitedPages: new Set<string>(),
+      currentDepth: PAGE_COLLECTION_DEFAULTS.INITIAL_DEPTH
+    }
+
+    const mergedOptions = { ...defaultOptions, ...options }
+    
+    console.log(`페이지 기반 수집 시작: ${rootPageId} (최대 깊이: ${mergedOptions.maxDepth})`)
+    
+    const result: PageCollectionResult = {
+      pages: [],
+      totalPages: 0,
+      skippedPages: 0,
+      discoveredDatabases: [],
+      maxDepthReached: false
+    }
+
+    await this.collectPagesRecursively(rootPageId, mergedOptions, result)
+    
+    console.log(`페이지 수집 완료: ${result.totalPages}개 수집, ${result.skippedPages}개 건너뜀`)
+    return result
+  }
+
+  async getChildPages(pageId: string): Promise<string[]> {
+    if (!this.isInitialized) {
+      throw new Error('노션 서비스가 초기화되지 않았습니다')
+    }
+
+    try {
+      const blocks = await this.client.blocks.children.list({
+        block_id: pageId,
+        page_size: MAX_NOTION_PAGE_SIZE,
+      })
+
+      const childPageIds: string[] = []
+      
+      for (const block of blocks.results) {
+        if ('type' in block) {
+          // child_page 타입 블록에서 페이지 ID 추출
+          if (block.type === 'child_page' && 'child_page' in block) {
+            childPageIds.push(block.id)
+          }
+          // link_to_page 타입에서도 페이지 ID 추출 가능
+          if (block.type === 'link_to_page' && 'link_to_page' in block) {
+            const linkToPage = block.link_to_page as any
+            if (linkToPage.type === 'page_id') {
+              childPageIds.push(linkToPage.page_id)
+            }
+          }
+        }
       }
+
+      return childPageIds
+    } catch (error) {
+      console.warn(`하위 페이지 조회 실패 (${pageId}):`, error)
+      return []
+    }
+  }
+
+  async findDatabasesInPage(pageId: string): Promise<string[]> {
+    if (!this.isInitialized) {
+      throw new Error('노션 서비스가 초기화되지 않았습니다')
+    }
+
+    try {
+      const blocks = await this.client.blocks.children.list({
+        block_id: pageId,
+        page_size: MAX_NOTION_PAGE_SIZE,
+      })
+
+      const databaseIds: string[] = []
+      
+      for (const block of blocks.results) {
+        if ('type' in block) {
+          // 인라인 데이터베이스
+          if (block.type === 'child_database' && 'child_database' in block) {
+            databaseIds.push(block.id)
+          }
+          // 링크된 데이터베이스 뷰
+          if (block.type === 'link_to_page' && 'link_to_page' in block) {
+            const linkToPage = block.link_to_page as any
+            if (linkToPage.type === 'database_id') {
+              databaseIds.push(linkToPage.database_id)
+            }
+          }
+        }
+      }
+
+      return databaseIds
+    } catch (error) {
+      console.warn(`데이터베이스 탐지 실패 (${pageId}):`, error)
+      return []
+    }
+  }
+
+  /**
+   * 페이지의 블록 내용 조회 (공개 메서드)
+   */
+  async getPageBlocks(pageId: string): Promise<any[]> {
+    if (!this.isInitialized) {
+      throw new Error('노션 서비스가 초기화되지 않았습니다')
+    }
+
+    try {
+      console.log(`페이지 블록 조회 시작: ${pageId}`)
+      
+      const response = await this.client.blocks.children.list({
+        block_id: pageId,
+        page_size: MAX_NOTION_PAGE_SIZE
+      })
+
+      return response.results || []
+    } catch (error) {
+      console.warn(`페이지 블록 조회 실패: ${pageId}`, error)
+      return []
+    }
+  }
+
+  private async collectPagesRecursively(
+    pageId: string, 
+    options: Required<PageCollectionOptions>, 
+    result: PageCollectionResult
+  ): Promise<void> {
+    // 순환 참조 방지
+    if (options.visitedPages.has(pageId)) {
+      console.log(`이미 방문한 페이지 건너뜀: ${pageId}`)
+      result.skippedPages++
+      return
+    }
+
+    // 최대 깊이 확인
+    if (options.currentDepth >= options.maxDepth) {
+      console.log(`최대 깊이 도달로 페이지 건너뜀: ${pageId} (깊이: ${options.currentDepth})`)
+      result.maxDepthReached = true
+      result.skippedPages++
+      return
+    }
+
+    // 방문 표시
+    options.visitedPages.add(pageId)
+
+    try {
+      // 현재 페이지 수집
+      console.log(`페이지 수집 중: ${pageId} (깊이: ${options.currentDepth})`)
+      const page = await this.getPage(pageId)
+      
+      // 빈 페이지 제외 옵션 확인
+      if (options.excludeEmpty && (!page.content || page.content.trim().length === 0)) {
+        console.log(`빈 페이지 건너뜀: ${page.title}`)
+        result.skippedPages++
+      } else {
+        result.pages.push(page)
+        result.totalPages++
+        console.log(`페이지 수집 완료: ${page.title}`)
+      }
+
+      // 하위 데이터베이스 탐지 및 수집
+      if (options.includeDatabase) {
+        const databaseIds = await this.findDatabasesInPage(pageId)
+        for (const databaseId of databaseIds) {
+          if (!result.discoveredDatabases.includes(databaseId)) {
+            result.discoveredDatabases.push(databaseId)
+            console.log(`하위 데이터베이스 발견: ${databaseId}`)
+            
+            // 데이터베이스의 페이지들 수집
+            await this.collectDatabasePages(databaseId, options, result)
+          }
+        }
+      }
+
+      // 하위 페이지 재귀 수집
+      const childPageIds = await this.getChildPages(pageId)
+      for (const childPageId of childPageIds) {
+        const childOptions = {
+          ...options,
+          currentDepth: options.currentDepth + 1
+        }
+        
+        await this.collectPagesRecursively(childPageId, childOptions, result)
+      }
+
+    } catch (error) {
+      console.error(`페이지 수집 실패: ${pageId}`, error)
+      result.skippedPages++
+    }
+  }
+
+  private async collectDatabasePages(
+    databaseId: string, 
+    options: Required<PageCollectionOptions>, 
+    result: PageCollectionResult
+  ): Promise<void> {
+    try {
+      console.log(`데이터베이스 페이지 수집 시작: ${databaseId}`)
+      
+      // 지정된 데이터베이스에서 직접 페이지 조회 (설정 변경 없이)
+      const pages = await this.getPagesFromDatabase(databaseId)
+      
+      for (const page of pages) {
+        // 이미 방문한 페이지가 아니면 상세 내용 수집
+        if (!options.visitedPages.has(page.id)) {
+          const fullPage = await this.getPage(page.id)
+          
+          if (!options.excludeEmpty || (fullPage.content && fullPage.content.trim().length > 0)) {
+            result.pages.push(fullPage)
+            result.totalPages++
+            console.log(`데이터베이스 페이지 수집 완료: ${fullPage.title}`)
+          }
+          
+          options.visitedPages.add(page.id)
+          
+          // 데이터베이스 페이지의 하위 페이지도 재귀 수집
+          if (options.currentDepth + 1 < options.maxDepth) {
+            const childOptions = {
+              ...options,
+              currentDepth: options.currentDepth + 1
+            }
+            
+            const childPageIds = await this.getChildPages(page.id)
+            for (const childPageId of childPageIds) {
+              await this.collectPagesRecursively(childPageId, childOptions, result)
+            }
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error(`데이터베이스 페이지 수집 실패: ${databaseId}`, error)
     }
   }
 
@@ -130,6 +368,17 @@ export class NotionService {
       await this.client.users.me({})
     } catch (error) {
       throw new Error(`노션 API 연결 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
+    }
+  }
+
+  getStatus(): ServiceStatus {
+    return {
+      connected: this.isInitialized,
+      lastCheck: new Date().toISOString(),
+      metadata: {
+        databaseId: this.config.databaseId,
+        timeout: this.config.timeout,
+      }
     }
   }
 

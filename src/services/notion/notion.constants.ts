@@ -16,6 +16,14 @@ export const MAX_NOTION_PAGE_SIZE = 100
 export const DEFAULT_NOTION_TIMEOUT = 30000
 export const MAX_RETRY_ATTEMPTS = 3
 
+// 페이지 기반 수집 관련 상수
+export const PAGE_COLLECTION_DEFAULTS = {
+  MAX_DEPTH: 10,
+  INCLUDE_DATABASE: true,
+  EXCLUDE_EMPTY: true,
+  INITIAL_DEPTH: 0
+} as const
+
 export const NOTION_PROPERTY_TYPES = {
   TITLE: 'title',
   RICH_TEXT: 'rich_text',

@@ -15,12 +15,12 @@
     "test:coverage": "jest tests/unit --coverage",
     "test:notion": "tsx scripts/test-notion-integration.ts",
     "test:openai": "tsx scripts/test-openai-integration.ts",
+    "test:page-collection": "tsx scripts/test-page-collection.ts",
     "test:embedding": "tsx scripts/test-embedding-integration.ts",
     "test:pinecone": "tsx scripts/test-pinecone-integration.ts",
     "test:full-pipeline": "tsx scripts/test-full-pipeline.ts",
     "test:rag-pipeline": "tsx scripts/test-rag-pipeline.ts",
-    "test:streaming-api": "tsx scripts/test-streaming-api.ts",
-    "debug:vector-search": "tsx scripts/debug-vector-search.ts"
+    "test:streaming-api": "tsx scripts/test-streaming-api.ts"
   },
   "keywords": [
     "rag",

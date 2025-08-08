@@ -1,4 +1,5 @@
 // Pinecone 벡터 DB 관련 타입 정의
+import type { CollectionMethod } from './document'
 
 export interface PineconeConfig {
   apiKey: string
@@ -18,6 +19,13 @@ export interface VectorMetadata {
   source: string
   timestamp?: string
   url?: string
+  // 페이지 기반 수집용 메타데이터
+  pageUrl?: string
+  pageTitle?: string
+  collectionMethod?: CollectionMethod
+  parentPageId?: string
+  depthLevel?: number
+  links?: string
 }
 
 export interface SearchResult {
