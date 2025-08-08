@@ -5,7 +5,6 @@ describe('NotionService - 페이지 기반 수집', () => {
   let notionService: NotionService
   const mockConfig: NotionConfig = {
     integrationToken: 'test-token',
-    databaseId: 'test-database-id',
     timeout: 5000,
     retryAttempts: 3,
   }

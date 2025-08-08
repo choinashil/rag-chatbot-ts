@@ -5,7 +5,6 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
   let notionService: NotionService
   const mockConfig: NotionConfig = {
     integrationToken: 'test-token',
-    databaseId: 'test-database-id',
     timeout: 5000,
     retryAttempts: 3,
   }
@@ -88,10 +87,10 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
       ;(notionService as any).client = mockClient
       await notionService.initialize()
 
-      await notionService.getPages()
+      await notionService.getPages('test-database-id')
 
       expect(mockClient.databases.query).toHaveBeenCalledWith({
-        database_id: mockConfig.databaseId,
+        database_id: 'test-database-id',
         page_size: 100
       })
     })
@@ -149,7 +148,7 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
       expect(notionService.getPage).toHaveBeenCalledWith('db-page-1')
       
       // 원래 설정이 변경되지 않았는지 확인
-      expect((notionService as any).config.databaseId).toBe(mockConfig.databaseId)
+      expect((notionService as any).config.integrationToken).toBe(mockConfig.integrationToken)
     })
 
     test('빈 페이지는 excludeEmpty 옵션에 따라 필터링되어야 한다', async () => {

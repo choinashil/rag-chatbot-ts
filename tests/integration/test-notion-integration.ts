@@ -44,7 +44,12 @@ async function testNotionIntegration() {
 
     // 4. 페이지 목록 조회 (최대 5개)
     console.log('\n4. 페이지 목록 조회 (최대 5개):')
-    const pages = await notionService.getPages()
+    const databaseId = process.env.NOTION_DATABASE_ID
+    if (!databaseId) {
+      console.log('NOTION_DATABASE_ID가 설정되지 않아 테스트를 건너뜁니다')
+      return
+    }
+    const pages = await notionService.getPages(databaseId)
     
     if (pages.length === 0) {
       console.log('   📭 데이터베이스에 페이지가 없습니다.')
@@ -69,6 +74,9 @@ async function testNotionIntegration() {
     if (pages.length > 0) {
       console.log('\n5. 첫 번째 페이지 상세 조회:')
       const firstPage = pages[0]
+      if (!firstPage) {
+        throw new Error('조회할 페이지가 없습니다')
+      }
       console.log(`   "${firstPage.title}" 상세 내용 조회 중...`)
       
       const pageDetail = await notionService.getPage(firstPage.id)

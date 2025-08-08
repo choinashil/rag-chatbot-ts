@@ -43,7 +43,6 @@ describe('NotionService', () => {
       notionService = new NotionService(mockNotionConfig)
       const status = notionService.getStatus()
       
-      expect(status.metadata?.databaseId).toBe(mockNotionConfig.databaseId)
       expect(status.metadata?.timeout).toBe(mockNotionConfig.timeout)
     })
   })
@@ -105,7 +104,7 @@ describe('NotionService', () => {
     })
 
     test('getPages() 호출 시 에러 발생', async () => {
-      await expect(notionService.getPages()).rejects.toThrow('노션 서비스가 초기화되지 않았습니다')
+      await expect(notionService.getPages('test-db-id')).rejects.toThrow('노션 서비스가 초기화되지 않았습니다')
     })
 
     test('getPage() 호출 시 에러 발생', async () => {
@@ -159,7 +158,7 @@ describe('NotionService', () => {
       test('전체 페이지 조회 성공', async () => {
         mockNotionClient.databases.query.mockResolvedValue(mockDatabaseResponse)
 
-        const pages = await initializedService.getPages()
+        const pages = await initializedService.getPages('test-database-id')
 
         expect(pages).toHaveLength(2)
         expect(pages[0]).toMatchObject({
@@ -176,7 +175,7 @@ describe('NotionService', () => {
         })
         
         expect(mockNotionClient.databases.query).toHaveBeenCalledWith({
-          database_id: mockNotionConfig.databaseId,
+          database_id: 'test-database-id',
           filter: undefined,
           page_size: 100
         })
@@ -189,11 +188,11 @@ describe('NotionService', () => {
           results: [mockDatabaseResponse.results[0]]
         })
 
-        const pages = await initializedService.getPages({ filter })
+        const pages = await initializedService.getPages('test-database-id', { filter })
 
         expect(pages).toHaveLength(1)
         expect(mockNotionClient.databases.query).toHaveBeenCalledWith({
-          database_id: mockNotionConfig.databaseId,
+          database_id: 'test-database-id',
           filter: filter,
           page_size: 100
         })
@@ -206,7 +205,7 @@ describe('NotionService', () => {
           next_cursor: null
         })
 
-        const pages = await initializedService.getPages()
+        const pages = await initializedService.getPages('test-database-id')
 
         expect(pages).toHaveLength(0)
         expect(pages).toEqual([])
@@ -215,7 +214,7 @@ describe('NotionService', () => {
       test('API 에러 처리', async () => {
         mockNotionClient.databases.query.mockRejectedValue(new Error('Database not found'))
 
-        await expect(initializedService.getPages()).rejects.toThrow('노션 페이지를 조회할 수 없습니다')
+        await expect(initializedService.getPages('test-database-id')).rejects.toThrow('노션 페이지를 조회할 수 없습니다')
       })
     })
 

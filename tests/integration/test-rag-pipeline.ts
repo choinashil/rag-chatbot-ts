@@ -82,12 +82,20 @@ async function testRAGPipeline() {
     if (pineconeStatus.vectorCount === 0) {
       console.log('벡터 데이터가 없습니다. 테스트 문서를 추가합니다...')
       
-      const pages = await notionService.getPages({ pageSize: 1 })
+      const databaseId = process.env.NOTION_DATABASE_ID
+      if (!databaseId) {
+        console.log('NOTION_DATABASE_ID가 설정되지 않아 테스트를 건너뜁니다')
+        return
+      }
+      const pages = await notionService.getPages(databaseId, { pageSize: 1 })
       if (pages.length === 0) {
         throw new Error('노션 데이터베이스에 페이지가 없습니다')
       }
       
       const testPage = pages[0]
+      if (!testPage) {
+        throw new Error('테스트할 페이지가 없습니다')
+      }
       console.log(`📄 테스트 문서 추가: "${testPage.title}"`)
       await documentProcessor.processDocument(testPage.id)
       

@@ -71,13 +71,21 @@ async function testFullPipeline() {
 
     // 4. 노션에서 첫 번째 페이지 가져오기
     console.log('\n3. 테스트용 노션 페이지 조회 중...')
-    const pages = await notionService.getPages({ pageSize: 1 })
+    const databaseId = process.env.NOTION_DATABASE_ID
+    if (!databaseId) {
+      console.log('NOTION_DATABASE_ID가 설정되지 않아 테스트를 건너뜁니다')
+      return
+    }
+    const pages = await notionService.getPages(databaseId, { pageSize: 1 })
     
     if (pages.length === 0) {
       throw new Error('노션 데이터베이스에 페이지가 없습니다')
     }
     
     const testPage = pages[0]
+    if (!testPage) {
+      throw new Error('테스트할 페이지를 찾을 수 없습니다')
+    }
     console.log(`📄 테스트 페이지: "${testPage.title}" (ID: ${testPage.id})`)
 
     // 5. 문서 처리 파이프라인 실행

@@ -28,8 +28,8 @@ export class NotionService {
     }
   }
 
-  async getPages(options?: { filter?: any; pageSize?: number }): Promise<NotionPage[]> {
-    return this.getPagesFromDatabase(this.config.databaseId, options)
+  async getPages(databaseId: string, options?: { filter?: any; pageSize?: number }): Promise<NotionPage[]> {
+    return this.getPagesFromDatabase(databaseId, options)
   }
 
   /**
@@ -398,7 +398,6 @@ export class NotionService {
       connected: this.isInitialized,
       lastCheck: new Date().toISOString(),
       metadata: {
-        databaseId: this.config.databaseId,
         timeout: this.config.timeout,
       }
     }
