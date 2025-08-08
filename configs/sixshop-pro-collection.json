@@ -5,7 +5,7 @@
       "id": "e7b780d5b6554f4e8bc957dcfcebfab3",
       "name": "웹사이트 디자인 (재귀 수집)",
       "options": {
-        "maxDepth": 3,
+        "maxDepth": 1,
         "includeDatabase": true,
         "excludeEmpty": true
       }

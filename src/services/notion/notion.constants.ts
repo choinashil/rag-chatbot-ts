@@ -10,6 +10,9 @@ export const NOTION_BLOCK_TYPES = {
   CODE: 'code',
   QUOTE: 'quote',
   DIVIDER: 'divider',
+  CALLOUT: 'callout',
+  COLUMN_LIST: 'column_list',
+  COLUMN: 'column',
 } as const
 
 export const MAX_NOTION_PAGE_SIZE = 100

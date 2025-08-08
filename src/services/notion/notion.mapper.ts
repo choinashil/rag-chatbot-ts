@@ -118,6 +118,34 @@ export class NotionMapper {
             if (text.trim()) markdown.push(`\`\`\`${language}\n${text}\n\`\`\``)
           }
           break
+        case NOTION_BLOCK_TYPES.CALLOUT:
+          if (block.callout?.rich_text) {
+            const text = this.extractRichText(block.callout.rich_text)
+            const icon = block.callout?.icon?.emoji || ''
+            const color = block.callout?.color || 'default'
+            if (text.trim()) {
+              // callout을 마크다운 인용문 형태로 표현
+              markdown.push(`> ${icon} **[${color}]** ${text}`)
+            }
+          }
+          break
+        case NOTION_BLOCK_TYPES.COLUMN_LIST:
+          // column_list 자체는 컨테이너 역할만 하므로 별도 텍스트 추출하지 않음
+          // has_children이 true인 경우 하위 column 블록들은 별도 처리됨
+          console.log(`column_list 블록 발견 (하위 블록 처리 필요): ${block.id}`)
+          break
+        case NOTION_BLOCK_TYPES.COLUMN:
+          // column 자체도 컨테이너 역할만 하므로 별도 텍스트 추출하지 않음
+          // has_children이 true인 경우 하위 블록들은 별도 처리됨
+          console.log(`column 블록 발견 (하위 블록 처리 필요): ${block.id}`)
+          break
+        case 'column_marker':
+          // 컬럼 구분을 위한 마커
+          if (block.column_marker) {
+            const columnIndex = block.column_marker.columnIndex + 1
+            markdown.push(`\n**[컬럼 ${columnIndex}]**`)
+          }
+          break
         default:
           console.log(`지원하지 않는 블록 타입: ${block.type}`)
           // 기본적으로 rich_text 필드가 있는지 확인해서 텍스트 추출 시도
@@ -220,6 +248,12 @@ export class NotionMapper {
       case NOTION_BLOCK_TYPES.NUMBERED_LIST_ITEM:
         richTextArray = block.numbered_list_item?.rich_text || []
         break
+      case NOTION_BLOCK_TYPES.CALLOUT:
+        richTextArray = block.callout?.rich_text || []
+        break
+      case 'quote':
+        richTextArray = block.quote?.rich_text || []
+        break
     }
     
     // 링크 정보 추출
@@ -249,6 +283,79 @@ export class NotionMapper {
     }
     
     return allLinks
+  }
+
+  /**
+   * callout 블록에서 상세 정보 추출
+   */
+  static extractCalloutDetails(block: any): {
+    text: string;
+    icon: string;
+    color: string;
+    links: Array<{text: string, url: string}>;
+  } | null {
+    if (block.type !== NOTION_BLOCK_TYPES.CALLOUT || !block.callout) {
+      return null
+    }
+
+    const callout = block.callout
+    const links: Array<{text: string, url: string}> = []
+    
+    // rich_text에서 텍스트와 링크 추출
+    let text = ''
+    if (callout.rich_text && Array.isArray(callout.rich_text)) {
+      text = callout.rich_text
+        .map((item: any) => {
+          const plainText = item.plain_text || ''
+          
+          // 링크 정보 수집
+          if (item.href) {
+            links.push({
+              text: plainText,
+              url: item.href
+            })
+          }
+          
+          return plainText
+        })
+        .join('')
+    }
+
+    // 아이콘 정보 추출
+    let icon = ''
+    if (callout.icon) {
+      if (callout.icon.type === 'emoji') {
+        icon = callout.icon.emoji
+      } else if (callout.icon.type === 'external') {
+        icon = callout.icon.external.url
+      } else if (callout.icon.type === 'file') {
+        icon = callout.icon.file.url
+      }
+    }
+
+    return {
+      text: text.trim(),
+      icon,
+      color: callout.color || 'default',
+      links
+    }
+  }
+
+  /**
+   * has_children이 true인 블록 타입 확인
+   */
+  static hasChildrenBlocks(blockType: string): boolean {
+    const containerTypes = [
+      NOTION_BLOCK_TYPES.COLUMN_LIST,
+      NOTION_BLOCK_TYPES.COLUMN,
+      'toggle',
+      'synced_block',
+      'table',
+      'child_page',
+      'child_database'
+    ]
+    
+    return containerTypes.includes(blockType)
   }
 
   /**

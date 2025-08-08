@@ -121,7 +121,9 @@ export class NotionService {
       })
 
       // 블록 내용을 마크다운으로 변환 (NotionMapper 사용)
-      const content = NotionMapper.blocksToMarkdown(blocks.results)
+      // has_children이 true인 블록들을 재귀적으로 처리
+      const allBlocks = await this.getAllBlocksRecursively(blocks.results)
+      const content = NotionMapper.blocksToMarkdown(allBlocks)
 
       const notionPage: NotionPage = {
         id: page.id,
@@ -269,6 +271,94 @@ export class NotionService {
       console.warn(`페이지 블록 조회 실패: ${pageId}`, error)
       return []
     }
+  }
+
+  /**
+   * 모든 블록을 재귀적으로 수집 (has_children이 true인 블록들 포함)
+   */
+  private async getAllBlocksRecursively(
+    blocks: any[], 
+    processedBlockIds: Set<string> = new Set(),
+    depth: number = 0
+  ): Promise<any[]> {
+    const maxDepth = 10 // 무한 재귀 방지
+    if (depth > maxDepth) {
+      console.log(`⚠️  최대 깊이(${maxDepth}) 도달, 추가 블록 처리 중단`)
+      return []
+    }
+
+    const allBlocks: any[] = []
+
+    for (const block of blocks) {
+      if (!('type' in block) || processedBlockIds.has(block.id)) {
+        continue
+      }
+
+      processedBlockIds.add(block.id)
+      allBlocks.push(block)
+
+      // has_children이 true인 경우 하위 블록들 재귀적으로 수집
+      if (block.has_children) {
+        try {
+          console.log(`        📦 하위 블록 조회: ${block.type} (${block.id})`)
+          
+          const childResponse = await this.client.blocks.children.list({
+            block_id: block.id,
+            page_size: MAX_NOTION_PAGE_SIZE
+          })
+
+          if (childResponse.results && childResponse.results.length > 0) {
+            const childBlocks = await this.getAllBlocksRecursively(
+              childResponse.results,
+              processedBlockIds,
+              depth + 1
+            )
+            
+            // column_list의 경우 특별 처리
+            if (block.type === 'column_list') {
+              const processedColumns = this.processColumnBlocks(childBlocks)
+              allBlocks.push(...processedColumns)
+            } else {
+              allBlocks.push(...childBlocks)
+            }
+          }
+        } catch (error) {
+          console.warn(`하위 블록 조회 실패: ${block.id}`, error)
+        }
+      }
+    }
+
+    return allBlocks
+  }
+
+  /**
+   * column 블록들을 특별 처리하여 컬럼별로 구분
+   */
+  private processColumnBlocks(blocks: any[]): any[] {
+    const processedBlocks: any[] = []
+    let currentColumnIndex = 0
+
+    for (const block of blocks) {
+      if (!('type' in block)) continue
+
+      if (block.type === 'column') {
+        // 컬럼 시작 마커 추가
+        const columnMarker = {
+          ...block,
+          type: 'column_marker',
+          column_marker: {
+            columnIndex: currentColumnIndex,
+            originalColumnId: block.id
+          }
+        }
+        processedBlocks.push(columnMarker)
+        currentColumnIndex++
+      } else {
+        processedBlocks.push(block)
+      }
+    }
+
+    return processedBlocks
   }
 
   private async collectPagesRecursively(
