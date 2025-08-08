@@ -2,7 +2,6 @@ import { PineconeService } from '../../../../src/services/pinecone/pinecone.serv
 import { PineconeClient } from '../../../../src/services/pinecone/pinecone.client'
 import type { VectorData } from '../../../../src/types/pinecone'
 
-// PineconeClient 모킹
 jest.mock('../../../../src/services/pinecone/pinecone.client')
 const MockPineconeClient = PineconeClient as jest.MockedClass<typeof PineconeClient>
 

@@ -16,7 +16,6 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
 
   describe('getPagesFromDatabase', () => {
     test('지정된 데이터베이스에서 직접 페이지를 조회해야 한다', async () => {
-      // Given
       const specificDatabaseId = 'specific-database-id'
       const mockPages = [
         {
@@ -28,7 +27,6 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
         }
       ]
 
-      // Mock Notion API client
       const mockClient = {
         users: { me: jest.fn().mockResolvedValue({ id: 'user-id' }) },
         databases: {
@@ -41,10 +39,8 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
       ;(notionService as any).client = mockClient
       await notionService.initialize()
 
-      // When
       const pages = await notionService.getPagesFromDatabase(specificDatabaseId)
 
-      // Then
       expect(mockClient.databases.query).toHaveBeenCalledWith({
         database_id: specificDatabaseId,
         page_size: 100
@@ -55,7 +51,6 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
     })
 
     test('필터와 페이지 크기 옵션을 올바르게 전달해야 한다', async () => {
-      // Given
       const specificDatabaseId = 'specific-database-id'
       const options = {
         filter: { property: 'Status', select: { equals: 'Published' } },
@@ -72,10 +67,8 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
       ;(notionService as any).client = mockClient
       await notionService.initialize()
 
-      // When
       await notionService.getPagesFromDatabase(specificDatabaseId, options)
 
-      // Then
       expect(mockClient.databases.query).toHaveBeenCalledWith({
         database_id: specificDatabaseId,
         page_size: 50,
@@ -84,7 +77,6 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
     })
 
     test('기존 getPages 메서드는 설정된 데이터베이스 ID를 사용해야 한다', async () => {
-      // Given
       const mockClient = {
         users: { me: jest.fn().mockResolvedValue({ id: 'user-id' }) },
         databases: {
@@ -95,10 +87,8 @@ describe('NotionService - 데이터베이스 방식 개선', () => {
       ;(notionService as any).client = mockClient
       await notionService.initialize()
 
-      // When
       await notionService.getPages()
 
-      // Then
       expect(mockClient.databases.query).toHaveBeenCalledWith({
         database_id: mockConfig.databaseId,
         page_size: 100

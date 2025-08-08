@@ -1,7 +1,6 @@
 import { ChatService } from '../../../../src/services/openai/chat.service'
 import { OpenAIClient } from '../../../../src/services/openai/openai.client'
 
-// OpenAI 클라이언트 모킹
 jest.mock('../../../../src/services/openai/openai.client')
 
 const MockOpenAIClient = OpenAIClient as jest.MockedClass<typeof OpenAIClient>
@@ -161,7 +160,6 @@ describe('ChatService', () => {
           message: { content: '테스트 응답' },
           finish_reason: 'stop'
         }]
-        // usage 정보 없음
       }
 
       mockClient.chat.completions.create.mockResolvedValue(mockResponse)
@@ -183,7 +181,6 @@ describe('ChatService', () => {
       const mockResponse = {
         choices: [{
           message: { content: '테스트 응답' }
-          // finish_reason 없음
         }],
         usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }
       }

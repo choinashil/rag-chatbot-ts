@@ -1,4 +1,3 @@
-// NotionMapper 단위 테스트
 import { NotionMapper } from '../../../../src/services/notion/notion.mapper'
 import type { NotionPage } from '../../../../src/types/notion'
 
@@ -100,7 +99,7 @@ describe('NotionMapper', () => {
         {
           type: 'paragraph',
           paragraph: {
-            rich_text: [{ plain_text: '   ' }] // 공백만 있는 경우
+            rich_text: [{ plain_text: '   ' }]
           }
         },
         {
@@ -138,7 +137,6 @@ describe('NotionMapper', () => {
     test('type 속성이 없는 블록 무시', () => {
       const blocks = [
         {
-          // type 속성 없음
           paragraph: {
             rich_text: [{ plain_text: 'This should be ignored' }]
           }

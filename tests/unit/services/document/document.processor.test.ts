@@ -6,7 +6,6 @@ import type { NotionPage } from '../../../../src/types/notion'
 import type { EmbeddingResult } from '../../../../src/types/embedding'
 import type { SearchResult } from '../../../../src/types/pinecone'
 
-// 서비스 모킹
 jest.mock('../../../../src/services/notion/notion.service')
 jest.mock('../../../../src/services/openai/embedding.service')
 jest.mock('../../../../src/services/pinecone/pinecone.service')
@@ -52,7 +51,6 @@ describe('DocumentProcessor', () => {
 
   describe('processDocument', () => {
     test('문서 처리 파이프라인이 성공적으로 실행됨', async () => {
-      // Mock 데이터 준비
       const mockNotionPage: NotionPage = {
         id: 'page-123',
         title: '테스트 문서',
@@ -70,15 +68,11 @@ describe('DocumentProcessor', () => {
         text: '이것은 테스트 문서입니다.'
       }
 
-      // Mock 설정
       mockNotionService.getPage.mockResolvedValue(mockNotionPage)
       mockEmbeddingService.createEmbedding.mockResolvedValue(mockEmbeddingResult)
       mockPineconeService.upsert.mockResolvedValue(undefined)
 
-      // 테스트 실행
       await documentProcessor.processDocument('page-123')
-
-      // 검증
       expect(mockNotionService.getPage).toHaveBeenCalledWith('page-123')
       expect(mockEmbeddingService.createEmbedding).toHaveBeenCalledWith(
         '이것은 테스트 문서입니다.',

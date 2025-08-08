@@ -6,7 +6,6 @@ import { OpenAIClient } from '../../../../src/services/openai/openai.client'
 import type { EmbeddingResult } from '../../../../src/types/embedding'
 import type { SearchResult } from '../../../../src/types/pinecone'
 
-// 서비스 모킹
 jest.mock('../../../../src/services/openai/embedding.service')
 jest.mock('../../../../src/services/pinecone/pinecone.service')
 jest.mock('../../../../src/services/openai/chat.service')
@@ -55,7 +54,6 @@ describe('RAGService', () => {
 
   describe('askQuestion', () => {
     test('성공적인 RAG 질의응답 플로우', async () => {
-      // Mock 데이터 준비
       const mockEmbeddingResult: EmbeddingResult = {
         embedding: new Array(1536).fill(0.1),
         tokenCount: 5,
@@ -86,16 +84,13 @@ describe('RAGService', () => {
         }
       }
 
-      // Mock 설정
       mockEmbeddingService.createEmbedding.mockResolvedValue(mockEmbeddingResult)
       mockPineconeService.query.mockResolvedValue(mockSearchResults)
       mockChatService.generateResponse.mockResolvedValue(mockChatResponse)
 
-      // 테스트 실행
       const request = { question: '배너 설정 방법을 알려주세요' }
       const result = await ragService.askQuestion(request)
 
-      // 검증
       expect(mockEmbeddingService.createEmbedding).toHaveBeenCalledWith('배너 설정 방법을 알려주세요')
       expect(mockPineconeService.query).toHaveBeenCalledWith(
         mockEmbeddingResult.embedding,
@@ -167,7 +162,6 @@ describe('RAGService', () => {
         }
       )
 
-      // 검색 결과가 없을 때 기본 응답
       expect(result.answer).toBe('죄송합니다. 관련된 정보를 찾을 수 없습니다. 다른 질문을 시도해보세요.')
       expect(result.sources).toHaveLength(0)
     })
@@ -190,7 +184,6 @@ describe('RAGService', () => {
       expect(result.sources).toHaveLength(0)
       expect(result.metadata.totalSources).toBe(0)
       
-      // ChatService가 호출되지 않아야 함
       expect(mockChatService.generateResponse).not.toHaveBeenCalled()
     })
 
@@ -323,7 +316,6 @@ describe('RAGService', () => {
         text: '테스트'
       }
 
-      // Pinecone에서 반환하는 메타데이터에는 title이 빈 문자열로 올 수 있음
       const mockSearchResults = [
         {
           id: 'test-1',
@@ -334,7 +326,7 @@ describe('RAGService', () => {
             source: 'notion'
           }
         }
-      ] as any[] // any로 캐스팅하여 타입 에러 회피
+      ] as any[]
 
       const mockChatResponse = {
         content: '테스트 응답',
@@ -355,7 +347,6 @@ describe('RAGService', () => {
 
   describe('askQuestionStream', () => {
     test('성공적인 스트리밍 질의응답 플로우', async () => {
-      // Mock 데이터 준비
       const mockEmbeddingResult: EmbeddingResult = {
         embedding: new Array(1536).fill(0.1),
         tokenCount: 5,
@@ -376,14 +367,12 @@ describe('RAGService', () => {
         }
       ]
 
-      // OpenAI 스트리밍 mock (AsyncIterable)
       const mockStreamChunks = [
         { choices: [{ delta: { content: '안녕' } }] },
         { choices: [{ delta: { content: '하세요' } }] },
         { choices: [{ delta: { content: '!' } }] }
       ]
 
-      // AsyncIterable 구현
       const mockStream = {
         [Symbol.asyncIterator]: async function* () {
           for (const chunk of mockStreamChunks) {
@@ -395,7 +384,6 @@ describe('RAGService', () => {
       mockEmbeddingService.createEmbedding.mockResolvedValue(mockEmbeddingResult)
       mockPineconeService.query.mockResolvedValue(mockSearchResults)
       
-      // OpenAI 클라이언트 mock 설정
       const mockOpenAIInstance = {
         chat: {
           completions: {
@@ -405,7 +393,6 @@ describe('RAGService', () => {
       }
       mockOpenAIClient.getClient.mockReturnValue(mockOpenAIInstance as any)
 
-      // 스트리밍 테스트 실행
       const request = { message: '스트리밍 테스트 질문' }
       const events: any[] = []
 
@@ -413,7 +400,6 @@ describe('RAGService', () => {
         events.push(event)
       }
 
-      // 검증
       expect(mockEmbeddingService.createEmbedding).toHaveBeenCalledWith('스트리밍 테스트 질문')
       expect(mockPineconeService.query).toHaveBeenCalledWith(
         mockEmbeddingResult.embedding,
@@ -423,7 +409,6 @@ describe('RAGService', () => {
         }
       )
 
-      // 이벤트 순서 검증
       expect(events).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ type: 'status', content: '질문 분석 중...' }),
@@ -453,7 +438,6 @@ describe('RAGService', () => {
         events.push(event)
       }
 
-      // 기본 응답 검증
       const tokenEvent = events.find(e => e.type === 'token')
       expect(tokenEvent?.content).toBe('죄송합니다. 관련된 정보를 찾을 수 없습니다. 다른 질문을 시도해보세요.')
 
@@ -474,7 +458,6 @@ describe('RAGService', () => {
         events.push(event)
       }
 
-      // 에러 이벤트 검증
       const errorEvent = events.find(e => e.type === 'error')
       expect(errorEvent).toBeDefined()
       expect(errorEvent?.content).toContain('질의를 처리할 수 없습니다')

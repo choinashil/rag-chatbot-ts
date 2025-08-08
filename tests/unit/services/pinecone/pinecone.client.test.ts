@@ -1,7 +1,6 @@
 import { PineconeClient } from '../../../../src/services/pinecone/pinecone.client'
 import type { PineconeConfig } from '../../../../src/types/pinecone'
 
-// Pinecone 라이브러리 모킹
 jest.mock('@pinecone-database/pinecone', () => ({
   Pinecone: jest.fn().mockImplementation(() => ({
     index: jest.fn()

@@ -1,9 +1,7 @@
-// OpenAI 클라이언트 단위 테스트
 import { OpenAIClient } from '../../../../src/services/openai/openai.client'
 import { OpenAIConfig } from '../../../../src/types/openai'
 import OpenAI from 'openai'
 
-// OpenAI 모듈 모킹
 jest.mock('openai')
 const MockedOpenAI = OpenAI as jest.MockedClass<typeof OpenAI>
 
@@ -12,7 +10,6 @@ describe('OpenAIClient', () => {
   let mockOpenAIInstance: jest.Mocked<OpenAI>
 
   beforeEach(() => {
-    // 유효한 설정 객체
     validConfig = {
       apiKey: 'sk-test-key-12345',
       timeout: 30000,
@@ -23,7 +20,6 @@ describe('OpenAIClient', () => {
       }
     }
 
-    // OpenAI 인스턴스 모킹
     mockOpenAIInstance = {
       models: {
         list: jest.fn().mockResolvedValue({ data: [] })
@@ -153,7 +149,6 @@ describe('OpenAIClient', () => {
       const error = new Error('API 호출 실패');
       (mockOpenAIInstance.models.list as jest.Mock).mockRejectedValueOnce(error)
 
-      // console.error 모킹하여 에러 로그 숨김
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
 
       const client = new OpenAIClient(validConfig)
@@ -192,7 +187,6 @@ describe('OpenAIClient', () => {
       const status1 = client.getStatus()
       const status2 = client.getStatus()
 
-      // 다른 객체여야 함 (복사본)
       expect(status1).not.toBe(status2)
       expect(status1).toEqual(status2)
     })
@@ -206,12 +200,10 @@ describe('OpenAIClient', () => {
 
       const client = new OpenAIClient(validConfig)
       
-      // 연결 전 상태
       const statusBefore = client.getStatus()
       expect(statusBefore.connected).toBe(false)
       expect(statusBefore.modelsAvailable).toEqual([])
 
-      // 연결 후 상태
       await client.checkConnection()
       const statusAfter = client.getStatus()
       expect(statusAfter.connected).toBe(true)
@@ -234,7 +226,6 @@ describe('OpenAIClient', () => {
       const config1 = client.getConfig()
       const config2 = client.getConfig()
 
-      // 다른 객체여야 함 (복사본)
       expect(config1).not.toBe(config2)
       expect(config1).toEqual(config2)
       expect(config1).toEqual(validConfig)
@@ -244,10 +235,8 @@ describe('OpenAIClient', () => {
       const client = new OpenAIClient(validConfig)
       const config = client.getConfig()
 
-      // 복사본 수정
       config.timeout = 999999
 
-      // 원본은 변경되지 않음
       const originalConfig = client.getConfig()
       expect(originalConfig.timeout).toBe(validConfig.timeout)
     })

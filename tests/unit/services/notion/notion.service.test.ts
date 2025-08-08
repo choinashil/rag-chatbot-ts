@@ -1,8 +1,5 @@
-// NotionService 단위 테스트
 import { NotionService } from '../../../../src/services/notion/notion.service'
 import { mockNotionConfig, invalidNotionConfig } from '../../../fixtures/notion-config'
-
-// 노션 클라이언트 모킹
 const mockNotionClient = {
   users: {
     me: jest.fn()
@@ -29,7 +26,6 @@ describe('NotionService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    // 모든 모킹된 함수들 리셋
     mockNotionClient.users.me.mockReset()
     mockNotionClient.databases.query.mockReset()
     mockNotionClient.pages.retrieve.mockReset()
@@ -61,7 +57,6 @@ describe('NotionService', () => {
     })
 
     test('초기화 성공 시 연결 상태로 변경', async () => {
-      // 노션 클라이언트 모킹 - 성공 케이스
       mockNotionClient.users.me.mockResolvedValue({ id: 'test-user' })
 
       notionService = new NotionService(mockNotionConfig)
@@ -72,7 +67,6 @@ describe('NotionService', () => {
     })
 
     test('초기화 실패 시 에러 발생', async () => {
-      // 노션 클라이언트 모킹 - 실패 케이스
       mockNotionClient.users.me.mockRejectedValue(new Error('API 연결 실패'))
 
       notionService = new NotionService(invalidNotionConfig)
@@ -123,7 +117,6 @@ describe('NotionService', () => {
     let initializedService: NotionService
 
     beforeEach(async () => {
-      // 성공적인 초기화 모킹
       mockNotionClient.users.me.mockResolvedValue({ id: 'test-user' })
       initializedService = new NotionService(mockNotionConfig)
       await initializedService.initialize()

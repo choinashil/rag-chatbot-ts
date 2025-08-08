@@ -1,8 +1,6 @@
-// EmbeddingService 기본 단위 테스트
 import { EmbeddingService } from '../../../../src/services/openai/embedding.service'
 import { OpenAIClient } from '../../../../src/services/openai/openai.client'
 
-// OpenAI 모듈 모킹
 jest.mock('openai')
 
 describe('EmbeddingService', () => {
@@ -11,14 +9,12 @@ describe('EmbeddingService', () => {
   let embeddingService: EmbeddingService
 
   beforeEach(() => {
-    // OpenAI API 응답 모킹
     mockOpenAIInstance = {
       embeddings: {
         create: jest.fn()
       }
     }
 
-    // OpenAIClient 모킹
     mockOpenAIClient = {
       getClient: jest.fn().mockReturnValue(mockOpenAIInstance),
       checkConnection: jest.fn().mockResolvedValue(true),
