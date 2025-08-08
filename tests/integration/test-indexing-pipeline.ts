@@ -1,11 +1,11 @@
 #!/usr/bin/env tsx
 /**
- * 전체 RAG 파이프라인 통합 테스트
- * 노션 문서 → 임베딩 → Pinecone 저장 → 검색 전체 플로우 테스트
+ * 문서 색인화 파이프라인 통합 테스트
+ * 노션 문서 → 임베딩 → Pinecone 저장 → 검색 플로우 테스트
  * 
  * 사용법:
  * 모든 환경변수 설정 후 실행
- * npm run test:full-pipeline
+ * npm run test:integration indexing-pipeline
  */
 
 import dotenv from 'dotenv'
@@ -22,8 +22,8 @@ import { createPineconeConfig } from '../../src/config/pinecone'
 // 환경변수 로드
 dotenv.config({ path: 'env/.env.integration' })
 
-async function testFullPipeline() {
-  console.log('🚀 전체 RAG 파이프라인 테스트 시작...')
+async function testIndexingPipeline() {
+  console.log('🚀 문서 색인화 파이프라인 테스트 시작...')
   
   try {
     // 1. 서비스 초기화
@@ -148,5 +148,5 @@ async function testFullPipeline() {
 
 // 스크립트 실행
 if (require.main === module) {
-  testFullPipeline()
+  testIndexingPipeline()
 }

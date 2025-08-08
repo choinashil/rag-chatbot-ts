@@ -321,7 +321,7 @@
 
 - [x] **통합 테스트 스크립트**
   - 실제 노션 페이지 → Pinecone 저장 → 검색 전체 플로우 ✅
-  - `scripts/test-full-pipeline.ts` 생성 ✅
+  - `scripts/test-indexing-pipeline.ts` 생성 ✅
   - 성공/실패 케이스 기본 확인 ✅
   - Notion API validation 이슈 해결 ✅
 
@@ -352,9 +352,9 @@
   - `getPages()` 메서드 시그니처 개선 (filter/pageSize 분리)
   - Notion API validation 에러 해결
 - **통합 테스트**:
-  - `test-full-pipeline.ts`: 전체 RAG 파이프라인 검증
-  - 서비스 초기화 → 문서 처리 → 파이프라인 검증 → 상태 확인
-  - `npm run test:full-pipeline` 명령어 추가
+  - `test-indexing-pipeline.ts`: 문서 색인화 파이프라인 검증
+  - 서비스 초기화 → 문서 처리 → 색인화 검증 → 상태 확인
+  - `npm run test:integration indexing-pipeline` 명령어로 실행
 - **단위 테스트**: 
   - DocumentProcessor 6개 테스트 (성공/실패 케이스)
   - processDocument, testPipeline 메서드 완전 검증
