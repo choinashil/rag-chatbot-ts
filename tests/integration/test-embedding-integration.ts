@@ -1,8 +1,8 @@
 // 임베딩 서비스 통합 테스트 - 실제 OpenAI API 호출 테스트
 import dotenv from 'dotenv'
-import { OpenAIClient } from '../src/services/openai/openai.client'
-import { EmbeddingService } from '../src/services/openai/embedding.service'
-import { createOpenAIConfig } from '../src/config/openai'
+import { OpenAIClient } from '../../src/services/openai/openai.client'
+import { EmbeddingService } from '../../src/services/openai/embedding.service'
+import { createOpenAIConfig } from '../../src/config/openai'
 
 // 환경변수 로드
 dotenv.config({ path: 'env/.env.integration' })

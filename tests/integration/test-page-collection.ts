@@ -8,16 +8,16 @@
  */
 
 import dotenv from 'dotenv'
-import { NotionService } from '../src/services/notion/notion.service'
-import { DocumentProcessor } from '../src/services/document/document.processor'
-import { EmbeddingService } from '../src/services/openai/embedding.service'
-import { OpenAIClient } from '../src/services/openai/openai.client'
-import { PineconeService } from '../src/services/pinecone/pinecone.service'
-import { PineconeClient } from '../src/services/pinecone/pinecone.client'
-import { createNotionConfig } from '../src/config/notion'
-import { createOpenAIConfig } from '../src/config/openai'
-import { createPineconeConfig } from '../src/config/pinecone'
-import type { PageCollectionOptions } from '../src/types/notion'
+import { NotionService } from '../../src/services/notion/notion.service'
+import { DocumentProcessor } from '../../src/services/document/document.processor'
+import { EmbeddingService } from '../../src/services/openai/embedding.service'
+import { OpenAIClient } from '../../src/services/openai/openai.client'
+import { PineconeService } from '../../src/services/pinecone/pinecone.service'
+import { PineconeClient } from '../../src/services/pinecone/pinecone.client'
+import { createNotionConfig } from '../../src/config/notion'
+import { createOpenAIConfig } from '../../src/config/openai'
+import { createPineconeConfig } from '../../src/config/pinecone'
+import type { PageCollectionOptions } from '../../src/types/notion'
 
 // 환경변수 로드
 dotenv.config({ path: 'env/.env.integration' })

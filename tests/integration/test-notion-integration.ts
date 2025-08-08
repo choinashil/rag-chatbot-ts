@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 // Notion API 실제 연동 테스트 스크립트
 import dotenv from 'dotenv'
-import { NotionService } from '../src/services/notion/notion.service'
-import { createNotionConfig } from '../src/config/notion'
+import { NotionService } from '../../src/services/notion/notion.service'
+import { createNotionConfig } from '../../src/config/notion'
 
 // 환경변수 로드
 dotenv.config({ path: 'env/.env.integration' })

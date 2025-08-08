@@ -9,13 +9,13 @@
  */
 
 import dotenv from 'dotenv'
-import { PineconeService } from '../src/services/pinecone/pinecone.service'
-import { PineconeClient } from '../src/services/pinecone/pinecone.client'
-import { EmbeddingService } from '../src/services/openai/embedding.service'
-import { OpenAIClient } from '../src/services/openai/openai.client'
-import { createPineconeConfig } from '../src/config/pinecone'
-import { createOpenAIConfig } from '../src/config/openai'
-import type { VectorData } from '../src/types/pinecone'
+import { PineconeService } from '../../src/services/pinecone/pinecone.service'
+import { PineconeClient } from '../../src/services/pinecone/pinecone.client'
+import { EmbeddingService } from '../../src/services/openai/embedding.service'
+import { OpenAIClient } from '../../src/services/openai/openai.client'
+import { createPineconeConfig } from '../../src/config/pinecone'
+import { createOpenAIConfig } from '../../src/config/openai'
+import type { VectorData } from '../../src/types/pinecone'
 
 // 환경변수 로드
 dotenv.config({ path: 'env/.env.integration' })

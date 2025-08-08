@@ -9,17 +9,17 @@
  */
 
 import dotenv from 'dotenv'
-import { RAGService } from '../src/services/rag/rag.service'
-import { DocumentProcessor } from '../src/services/document/document.processor'
-import { NotionService } from '../src/services/notion/notion.service'
-import { EmbeddingService } from '../src/services/openai/embedding.service'
-import { PineconeService } from '../src/services/pinecone/pinecone.service'
-import { ChatService } from '../src/services/openai/chat.service'
-import { OpenAIClient } from '../src/services/openai/openai.client'
-import { PineconeClient } from '../src/services/pinecone/pinecone.client'
-import { createNotionConfig } from '../src/config/notion'
-import { createOpenAIConfig } from '../src/config/openai'
-import { createPineconeConfig } from '../src/config/pinecone'
+import { RAGService } from '../../src/services/rag/rag.service'
+import { DocumentProcessor } from '../../src/services/document/document.processor'
+import { NotionService } from '../../src/services/notion/notion.service'
+import { EmbeddingService } from '../../src/services/openai/embedding.service'
+import { PineconeService } from '../../src/services/pinecone/pinecone.service'
+import { ChatService } from '../../src/services/openai/chat.service'
+import { OpenAIClient } from '../../src/services/openai/openai.client'
+import { PineconeClient } from '../../src/services/pinecone/pinecone.client'
+import { createNotionConfig } from '../../src/config/notion'
+import { createOpenAIConfig } from '../../src/config/openai'
+import { createPineconeConfig } from '../../src/config/pinecone'
 
 // 환경변수 로드
 dotenv.config({ path: 'env/.env.integration' })
