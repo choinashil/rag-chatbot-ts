@@ -69,7 +69,7 @@ export async function registerHealthRoutes(fastify: FastifyInstance): Promise<vo
 
       return reply.status(200).send(apiResponse);
     } catch (error) {
-      fastify.log.error('헬스체크 오류:', error);
+      fastify.log.error({ err: error }, '헬스체크 오류');
       
       return reply.status(503).send({
         success: false,
