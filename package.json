@@ -1,5 +1,5 @@
 {
-  "name": "rag-chatbot-2",
+  "name": "rag-chatbot-ts",
   "version": "1.0.0",
   "description": "Production-ready RAG chatbot with Fastify and TypeScript",
   "main": "dist/server.js",
@@ -20,7 +20,8 @@
     "collect:page": "tsx scripts/collect-from-page.ts", 
     "collect:mixed": "tsx scripts/collect-mixed.ts",
     "clear:vectors": "tsx scripts/clear-vectors.ts",
-    "show:vectors": "tsx scripts/show-vectors.ts"
+    "show:vectors": "tsx scripts/show-vectors.ts",
+    "analyze:page": "tsx scripts/analyze-notion-page-blocks.ts"
   },
   "keywords": [
     "rag",
