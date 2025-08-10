@@ -112,6 +112,10 @@ async function main() {
   const startTime = Date.now()
   const options = parseArgs()
 
+  // 환경 설정 로드
+  const environment = parseEnvironment(process.argv.slice(2))
+  loadEnvironment(environment)
+
   console.log('🗑️  벡터 인덱스 초기화 시작')
   console.log(`⚙️  옵션:`)
   console.log(`   드라이런 모드: ${options.dryRun ? '예' : '아니오'}`)
