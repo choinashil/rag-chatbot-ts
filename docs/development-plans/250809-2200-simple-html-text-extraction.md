@@ -163,11 +163,32 @@ breadcrumb: 100% 정확한 계층 구조 추출
 - **확장성**: 대용량 사이트 처리 가능한 구조
 
 ### **4단계: HTML 파서 전략 패턴 리팩토링** ✅ **완료**
-- ✅ 전략 패턴 도입 및 사이트별 파싱 로직 분리
-- ✅ oopy 자동 감지 시스템 구현
-- ✅ Generic 파서로 일반 HTML 사이트 지원
-- ✅ 확장 가능한 아키텍처 구축
-- ✅ 포괄적인 테스트 코드 작성 (58개 테스트 통과)
+- ✅ 전략 패턴 도입 및 사이트별 파싱 로직 분리 (Phase 1-2 완료)
+- ✅ oopy 자동 감지 시스템 구현 (URL + HTML 내용 기반 감지)
+- ✅ Generic 파서로 일반 HTML 사이트 지원 (Phase 3 완료)
+- ✅ HtmlService 리팩토링 및 하위 호환성 유지 (Phase 4 완료)
+- ✅ 확장 가능한 아키텍처 구축 (향후 WordPress, Notion 등 파서 추가 용이)
+- ✅ 포괄적인 테스트 코드 작성 및 검증 (Phase 5 완료)
+  - 파서별 독립적인 단위 테스트 (`oopy-parser.test.ts`, `generic-parser.test.ts`)
+  - 기존 테스트 모두 통과 (254/254 단위 + 7/7 통합)
+  - 일반 HTML 사이트 파싱 기능 동작 확인
+
+#### 구현 결과 
+```
+src/services/html/
+├── parsers/
+│   ├── oopy-parser.ts          # oopy 사이트 전용 파서
+│   ├── generic-parser.ts       # 일반 HTML 파서 (fallback)
+│   └── index.ts               # 파서들 export
+├── html-parser.manager.ts      # 전략 선택 및 관리
+└── html.service.ts            # 리팩토링된 메인 서비스
+```
+
+**핵심 개선사항:**
+- **타입 안전성**: `ParserName = 'oopy' | 'generic'` 타입 제한
+- **자동 감지**: URL 기반 + HTML 내용 기반 oopy 사이트 감지
+- **확장성**: 새로운 파서 추가 시 기존 코드 수정 없이 가능
+- **하위 호환성**: 기존 HtmlService API 완전 호환
 
 ### **5단계: 벡터 데이터베이스 연동** (예정)
 - Pinecone 연동 및 메타데이터 최적화
@@ -267,7 +288,7 @@ src/
 - **하드코딩 제거**: 기존 HtmlService에서 oopy 전용 로직 완전 분리
 - **확장 가능**: 새로운 파서 추가 시 기존 코드 수정 없이 가능
 
-**상세 계획**: [`250810-1830-html-parser-strategy-refactoring.md`](./250810-1830-html-parser-strategy-refactoring.md)
+**상세 구현 계획**: [`250810-1830-html-parser-strategy-refactoring.md`](./250810-1830-html-parser-strategy-refactoring.md)
 
 ---
 
