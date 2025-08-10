@@ -17,11 +17,11 @@
     "test:integration": "tsx scripts/run-integration-tests.ts",
     "test:api": "tsx tests/integration/test-streaming-api.ts",
     "collect:database": "tsx scripts/collect-from-database.ts",
-    "collect:page": "tsx scripts/collect-from-page.ts", 
+    "collect:page": "tsx scripts/collect-from-page.ts",
     "collect:mixed": "tsx scripts/collect-mixed.ts",
     "clear:vectors": "tsx scripts/clear-vectors.ts",
     "show:vectors": "tsx scripts/show-vectors.ts",
-    "analyze:page": "tsx scripts/analyze-notion-page-blocks.ts"
+    "parse:html": "tsx scripts/html-parser.ts"
   },
   "keywords": [
     "rag",
@@ -40,6 +40,8 @@
     "@fastify/static": "^7.0.4",
     "@notionhq/client": "^4.0.1",
     "@pinecone-database/pinecone": "^6.1.1",
+    "@types/cheerio": "^0.22.35",
+    "cheerio": "^1.1.2",
     "dotenv": "^17.2.0",
     "fastify": "^4.28.1",
     "graphql-request": "^7.1.2",

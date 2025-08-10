@@ -12,14 +12,19 @@
 
 import { config } from 'dotenv'
 import { resolve } from 'path'
-import { NotionService } from '../src/services/notion/notion.service'
-import type { NotionConfig } from '../src/types/notion'
+import { NotionService } from '../../src/services/notion/notion.service'
+import type { NotionConfig } from '../../src/types/notion'
 import { Client } from '@notionhq/client'
 
 // 환경변수 로드
 config({ path: resolve(__dirname, '../env/.env.prod') })
 
-let TARGET_PAGE_ID = 'e7b780d5b6554f4e8bc957dcfcebfab3' // Default page ID
+const PAGE = {
+  WEBSITE_DESIGN: 'e7b780d5b6554f4e8bc957dcfcebfab3', // 웹사이트 디자인
+  WEBSITE_DESIGN_INTRO: 'ed3854bf53934425a3ef0161ca54690f' // 웹사이트 디자인 입문하기
+}
+
+let TARGET_PAGE_ID = PAGE.WEBSITE_DESIGN_INTRO // Default page ID
 
 class NotionBlockAnalyzer {
   private static readonly NOTION_BASE_URL = 'https://sellerhub.notion.site'
@@ -57,7 +62,7 @@ class NotionBlockAnalyzer {
   }
 
   /**
-   * rich_text 배열에서 텍스트와 링크를 추출하는 유틸리티 함수
+   * rich_text 배열에서 텍스트와 링크를 추출하는 유틸리티 함수 (스타일링 포함)
    */
   private extractFromRichTextArray(items: any[]): { textParts: string[], markdownParts: string[], links: string[] } {
     const textParts: string[] = []
@@ -67,12 +72,29 @@ class NotionBlockAnalyzer {
     items.forEach((item: any) => {
       if (item.plain_text) {
         textParts.push(item.plain_text)
+        
+        let markdownText = item.plain_text
+        
+        // 스타일링 적용 (우선순위: 링크 > 코드 > 볼드)
         if (item.href) {
           links.push(item.href)
-          markdownParts.push(`[${item.plain_text}](${item.href})`)
-        } else {
-          markdownParts.push(item.plain_text)
+          markdownText = `[${item.plain_text}](${item.href})`
+        } else if (item.annotations) {
+          // 코드 스타일
+          if (item.annotations.code) {
+            markdownText = `\`${item.plain_text}\``
+          }
+          // 볼드 스타일
+          else if (item.annotations.bold) {
+            markdownText = `**${item.plain_text}**`
+          }
+          // 이탤릭 스타일
+          else if (item.annotations.italic) {
+            markdownText = `*${item.plain_text}*`
+          }
         }
+        
+        markdownParts.push(markdownText)
       }
     })
     
@@ -108,7 +130,7 @@ class NotionBlockAnalyzer {
    * 페이지의 모든 블록을 재귀적으로 수집
    */
   private async getAllBlocks(blockId: string, depth: number = 0): Promise<any[]> {
-    const maxDepth = 0 // 무한 재귀 방지
+    const maxDepth = 2 // callout 하위 블록 수집을 위해 깊이 증가
     if (depth > maxDepth) {
       console.log(`⚠️  최대 깊이(${maxDepth}) 도달, 블록 ${blockId} 건너뜀`)
       return []
@@ -132,6 +154,13 @@ class NotionBlockAnalyzer {
           if (block.has_children) {
             console.log(`${indent}  └─ 하위 블록 탐색 중...`)
             const childBlocks = await this.getAllBlocks(block.id, depth + 1)
+            // 하위 블록들을 parent 정보와 함께 저장
+            childBlocks.forEach(childBlock => {
+              childBlock._parent = {
+                id: block.id,
+                type: block.type
+              }
+            })
             blocks.push(...childBlocks)
           }
         }
@@ -206,6 +235,58 @@ class NotionBlockAnalyzer {
       result.markdown = blockData.title
       // child_page의 노션 URL 생성 (페이지 ID 기반)
       result.links = [] // 현재는 노션 URL 생성 비활성화 (필요시 활성화)
+    }
+    
+    // Method 5.5: link_to_page 블록 처리
+    else if (blockData.page_id || blockData.database_id) {
+      // page_id나 database_id를 가진 링크 블록
+      result.text = 'Link to page'
+      result.markdown = result.text
+      // 실제 페이지 제목을 얻으려면 추가 API 호출이 필요하지만 일단 기본값 사용
+    }
+    
+    // Method 6: 기타 모든 블록 타입에 대한 범용 텍스트 추출
+    else {
+      const genericResult = this.extractTextFromGenericBlock(blockData)
+      result.text = genericResult.text
+      result.markdown = genericResult.markdown
+      result.links.push(...genericResult.links)
+    }
+
+    return result
+  }
+
+  /**
+   * 범용 블록에서 텍스트 추출 (heading_3, toggle, quote, code, table 등)
+   */
+  private extractTextFromGenericBlock(blockData: any): { text: string; links: string[]; markdown: string } {
+    let result = { text: '', links: [] as string[], markdown: '' }
+
+    // 가능한 텍스트 필드들을 순서대로 확인
+    const textFields = ['rich_text', 'text', 'title', 'caption', 'plain_text']
+    
+    for (const field of textFields) {
+      if (blockData[field]) {
+        if (Array.isArray(blockData[field])) {
+          // rich_text 배열 형태
+          const extracted = this.extractFromRichTextArray(blockData[field])
+          result.text = extracted.textParts.join('')
+          result.markdown = extracted.markdownParts.join('')
+          result.links.push(...extracted.links)
+          break
+        } else if (typeof blockData[field] === 'string') {
+          // 단순 문자열
+          result.text = blockData[field]
+          result.markdown = blockData[field]
+          break
+        }
+      }
+    }
+
+    // 특별 케이스: code 블록
+    if (blockData.language && blockData.caption) {
+      result.text = `Code (${blockData.language}): ${blockData.caption.map((c: any) => c.plain_text || '').join('')}`
+      result.markdown = result.text
     }
 
     return result
@@ -388,10 +469,30 @@ class NotionBlockAnalyzer {
             console.log(`    - 스타일: ${JSON.stringify(textItem.annotations || {})}`)
           })
 
-          const fullText = callout.rich_text
-            .map((item: any) => item.plain_text || '')
-            .join('')
-          console.log(`✨ 완성된 텍스트: "${fullText}"`)
+          // 마크다운 형식으로 변환하여 표시
+          const extracted = this.extractFromRichTextArray(callout.rich_text)
+          console.log(`✨ 완성된 텍스트: "${extracted.textParts.join('')}"`)
+          console.log(`🔗 마크다운 형식: "${extracted.markdownParts.join('')}"`)
+          if (extracted.links.length > 0) {
+            console.log(`🔗 추출된 링크: ${extracted.links.join(', ')}`)
+          }
+        }
+
+        // 하위 블록들 확인
+        const childBlocks = blocks.filter(childBlock => 
+          childBlock._parent && childBlock._parent.id === block.id
+        )
+        
+        if (childBlocks.length > 0) {
+          console.log(`📎 하위 블록 (${childBlocks.length}개):`)
+          childBlocks.forEach((childBlock, childIndex) => {
+            const childData = childBlock[childBlock.type] || {}
+            const childExtracted = this.extractTextAndLinks(childData)
+            console.log(`  ${childIndex + 1}. ${childBlock.type}: "${childExtracted.text}"`)
+            if (childExtracted.links.length > 0) {
+              console.log(`     링크: ${childExtracted.links.join(', ')}`)
+            }
+          })
         }
       }
     })

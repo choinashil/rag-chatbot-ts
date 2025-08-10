@@ -236,13 +236,17 @@ describe('NotionService', () => {
       const mockBlocksResponse = {
         results: [
           {
+            id: 'block-1',
             type: 'paragraph',
+            has_children: false,
             paragraph: {
               rich_text: [{ plain_text: 'This is a test paragraph.' }]
             }
           },
           {
+            id: 'block-2', 
             type: 'heading_1',
+            has_children: false,
             heading_1: {
               rich_text: [{ plain_text: 'Main Heading' }]
             }
