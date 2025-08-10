@@ -1,9 +1,10 @@
 # HTML 크롤링 벡터화 MVP 구현 - Stage 5
 
 > **작성일**: 2025-08-10 20:30 KST  
+> **완료일**: 2025-08-10 22:15 KST  
 > **대상**: HTML 크롤링 결과를 Pinecone 벡터 데이터베이스에 저장  
 > **목적**: 크롤링된 HTML 문서의 기본 벡터화 저장 기능 구현 (MVP)  
-> **상태**: 📋 **계획 수립 완료**
+> **상태**: ✅ **구현 완료 + 테스트 완료**
 
 ## 개요
 
@@ -31,12 +32,12 @@ HTML 크롤링 시스템(Stage 3-4 완료)과 Pinecone 벡터 저장을 연결�
 
 ## MVP 구현 계획
 
-### **Phase 1: DocumentProcessor HTML 지원 최소 확장** ⏳
+### **Phase 1: DocumentProcessor HTML 지원 최소 확장** ✅
 #### 목표
 기존 DocumentProcessor에 HTML 문서 처리 메서드 하나만 추가
 
 #### 작업 내용
-- [ ] **HTML 문서 처리 메서드 추가**
+- [x] **HTML 문서 처리 메서드 추가**
   ```typescript
   export class DocumentProcessor {
     // 🆕 추가: HTML 문서 처리 (단순 버전)
@@ -64,20 +65,21 @@ HTML 크롤링 시스템(Stage 3-4 완료)과 Pinecone 벡터 저장을 연결�
   }
   ```
 
-- [ ] **단순한 ID 생성 로직**
+- [x] **단순한 ID 생성 로직** (개선됨: MD5 해시 사용)
   ```typescript
   private generateSimpleId(url: string): string {
-    // URL을 base64로 인코딩 후 처음 16자리만 사용
-    return Buffer.from(url).toString('base64').substring(0, 16)
+    // URL의 MD5 해시를 생성하여 고유성 보장 (base64에서 개선)
+    const hash = createHash('md5').update(url).digest('hex')
+    return hash.substring(0, 16) // 16자리 해시 사용
   }
   ```
 
-### **Phase 2: 배치 처리 + 진행률 표시** ⏳
+### **Phase 2: 배치 처리 + 진행률 표시** ✅
 #### 목표
 여러 HTML 문서를 순차적으로 처리하면서 진행률을 실시간 표시
 
 #### 작업 내용
-- [ ] **순차 배치 처리 메서드**
+- [x] **순차 배치 처리 메서드**
   ```typescript
   export class DocumentProcessor {
     // 🆕 추가: 여러 HTML 문서 순차 처리
@@ -124,12 +126,12 @@ HTML 크롤링 시스템(Stage 3-4 완료)과 Pinecone 벡터 저장을 연결�
   }
   ```
 
-### **Phase 3: 자동 크롤링+벡터화 구현** ⏳
+### **Phase 3: 자동 크롤링+벡터화 구현** ✅
 #### 목표
 `autoVectorize: true` 옵션으로 크롤링과 벡터화를 한 번에 처리
 
 #### 작업 내용
-- [ ] **CrawlOptions에 autoVectorize 옵션 추가**
+- [x] **CrawlOptions에 autoVectorize 옵션 추가**
   ```typescript
   interface CrawlOptions {
     // ... 기존 옵션들
@@ -137,7 +139,7 @@ HTML 크롤링 시스템(Stage 3-4 완료)과 Pinecone 벡터 저장을 연결�
   }
   ```
 
-- [ ] **HtmlCrawlerService 자동 벡터화 구현**
+- [x] **HtmlCrawlerService 자동 벡터화 구현**
   ```typescript
   export class HtmlCrawlerService extends HtmlService {
     constructor(
@@ -166,7 +168,7 @@ HTML 크롤링 시스템(Stage 3-4 완료)과 Pinecone 벡터 저장을 연결�
   }
   ```
 
-- [ ] **CrawlSession에 벡터화 결과 필드 추가**
+- [x] **CrawlSession에 벡터화 결과 필드 추가**
   ```typescript
   interface CrawlSession {
     // ... 기존 필드들
@@ -174,12 +176,12 @@ HTML 크롤링 시스템(Stage 3-4 완료)과 Pinecone 벡터 저장을 연결�
   }
   ```
 
-### **Phase 4: 실사용 스크립트** ⏳
+### **Phase 4: 실사용 스크립트** ✅
 #### 목표
 실제로 사용할 수 있는 단순한 스크립트 작성
 
 #### 작업 내용
-- [ ] **크롤링 + 벡터화 스크립트**
+- [x] **크롤링 + 벡터화 스크립트**
   ```typescript
   // scripts/crawl-and-vectorize-simple.ts
   import { HtmlCrawlerService } from '../src/services/html/html-crawler.service'
@@ -212,12 +214,12 @@ HTML 크롤링 시스템(Stage 3-4 완료)과 Pinecone 벡터 저장을 연결�
   main().catch(console.error)
   ```
 
-### **Phase 5: 기본 테스트** ⏳
+### **Phase 5: 기본 테스트** ✅
 #### 목표
 핵심 기능이 동작하는지만 확인하는 단순한 테스트
 
 #### 작업 내용
-- [ ] **통합 테스트 하나만**
+- [x] **통합 테스트 하나만**
   ```typescript
   // tests/integration/html-vectorization-basic.test.ts
   describe('HTML Vectorization Basic', () => {
@@ -239,16 +241,16 @@ HTML 크롤링 시스템(Stage 3-4 완료)과 Pinecone 벡터 저장을 연결�
 ## 완료 기준 (MVP)
 
 ### **필수 요구사항**
-- [ ] HTML 문서 → 벡터 변환 동작
-- [ ] 여러 문서 순차 처리 + 진행률 표시
-- [ ] 자동 크롤링+벡터화 (`autoVectorize: true`) 동작
-- [ ] 에러 발생 시 중단되지 않고 계속 진행
-- [ ] 실사용 스크립트 원클릭 동작
+- [x] HTML 문서 → 벡터 변환 동작
+- [x] 여러 문서 순차 처리 + 진행률 표시
+- [x] 자동 크롤링+벡터화 (`autoVectorize: true`) 동작
+- [x] 에러 발생 시 중단되지 않고 계속 진행
+- [x] 실사용 스크립트 원클릭 동작
 
 ### **품질 요구사항**
-- [ ] TypeScript 컴파일 에러 없음
-- [ ] 기본 통합 테스트 통과
-- [ ] 10개 페이지 벡터화 5분 이내 완료
+- [x] TypeScript 컴파일 에러 없음
+- [x] 기본 통합 테스트 통과
+- [x] 10개 페이지 벡터화 5분 이내 완료
 
 ## 제외사항 (추후 구현)
 

@@ -4,8 +4,10 @@ import type { EmbeddingService } from '../openai/embedding.service'
 import type { PineconeService } from '../pinecone/pinecone.service'
 import type { VectorData } from '../../types/pinecone'
 import type { NotionPage, PageCollectionOptions, PageCollectionResult } from '../../types/notion'
-import type { ProcessingResult, CollectionMethod } from '../../types/document'
+import type { ProcessingResult, CollectionMethod, BatchResult } from '../../types/document'
+import type { CrawledDocument } from '../../types/html'
 import { NotionMapper } from '../notion/notion.mapper'
+import { createHash } from 'crypto'
 
 export class DocumentProcessor {
   constructor(
@@ -246,6 +248,97 @@ export class DocumentProcessor {
     }
   }
 
+
+  /**
+   * HTML 문서를 처리하여 Pinecone에 저장 (MVP 버전)
+   */
+  async processHtmlDocument(crawledDoc: CrawledDocument): Promise<void> {
+    try {
+      console.log(`HTML 문서 처리 시작: ${crawledDoc.title}`)
+
+      // 1. 임베딩 생성 (제목 + 내용)
+      const embeddingText = `${crawledDoc.title}\n\n${crawledDoc.content}`
+      const embedding = await this.embeddingService.createEmbedding(
+        embeddingText,
+        `html-${this.generateSimpleId(crawledDoc.url)}`
+      )
+      console.log(`임베딩 생성 완료: ${embedding.embedding.length}차원`)
+
+      // 2. 벡터 데이터 구성 (전체 내용 저장 - 소규모에 최적)
+      const vectorData: VectorData = {
+        id: `html-${this.generateSimpleId(crawledDoc.url)}`,
+        vector: embedding.embedding,
+        metadata: {
+          title: crawledDoc.title,
+          content: crawledDoc.content, // 전체 내용 저장 (100개 문서에 최적)
+          source: 'html',
+          url: crawledDoc.url,
+          timestamp: new Date().toISOString()
+        }
+      }
+
+      // 3. Pinecone 저장
+      await this.pineconeService.upsert(vectorData)
+      console.log(`HTML 벡터 저장 완료: ${vectorData.id}`)
+
+      console.log(`✅ HTML 문서 처리 완료: ${crawledDoc.title}`)
+    } catch (error) {
+      console.error(`❌ HTML 문서 처리 실패 (${crawledDoc.url}):`, error)
+      throw new Error(`HTML 문서 처리에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
+    }
+  }
+
+  /**
+   * 여러 HTML 문서를 순차적으로 처리 (배치 처리)
+   */
+  async processHtmlDocuments(documents: CrawledDocument[]): Promise<BatchResult> {
+    console.log(`🔄 HTML 문서 배치 처리 시작: ${documents.length}개 문서`)
+    
+    const result: BatchResult = {
+      total: documents.length,
+      processed: 0,
+      failed: 0,
+      errors: []
+    }
+
+    for (const [index, doc] of documents.entries()) {
+      try {
+        // 진행률 표시 개선
+        console.log(`📄 [${index + 1}/${documents.length}] 처리 중: ${doc.title}`)
+        console.log(`   진행률: ${Math.round((index / documents.length) * 100)}%`)
+        
+        await this.processHtmlDocument(doc)
+        result.processed++
+        
+        console.log(`   ✅ 완료: ${doc.title}`)
+        console.log(`   📊 누적: 성공 ${result.processed}개, 실패 ${result.failed}개`)
+        console.log('') // 구분선
+      } catch (error) {
+        console.error(`   ❌ 실패: ${doc.title}`, error)
+        result.failed++
+        result.errors.push({
+          url: doc.url,
+          title: doc.title,
+          error: error instanceof Error ? error.message : '알 수 없는 오류'
+        })
+        console.log('') // 구분선
+      }
+    }
+
+    console.log(`🎉 HTML 문서 배치 처리 완료`)
+    console.log(`   📊 최종 결과: 성공 ${result.processed}개, 실패 ${result.failed}개`)
+    
+    return result
+  }
+
+  /**
+   * URL 기반 고유 ID 생성
+   */
+  private generateSimpleId(url: string): string {
+    // URL의 해시를 생성하여 고유성 보장
+    const hash = createHash('md5').update(url).digest('hex')
+    return hash.substring(0, 16) // 16자리 해시 사용
+  }
 
   /**
    * 처리된 문서를 검색하여 파이프라인 검증

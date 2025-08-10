@@ -24,7 +24,8 @@ export class PineconeService {
           title: vectorData.metadata.title,
           content: vectorData.metadata.content,
           source: vectorData.metadata.source,
-          timestamp: vectorData.metadata.timestamp || new Date().toISOString()
+          timestamp: vectorData.metadata.timestamp || new Date().toISOString(),
+          ...(vectorData.metadata.url && { url: vectorData.metadata.url })
         }
       }])
 
@@ -63,7 +64,8 @@ export class PineconeService {
             title: (match.metadata as any)?.title || '',
             content: (match.metadata as any)?.content || '',
             source: (match.metadata as any)?.source || '',
-            timestamp: (match.metadata as any)?.timestamp
+            timestamp: (match.metadata as any)?.timestamp,
+            url: (match.metadata as any)?.url
           }
         }))
 

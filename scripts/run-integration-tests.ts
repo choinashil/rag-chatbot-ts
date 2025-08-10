@@ -32,7 +32,8 @@ const AVAILABLE_TESTS = {
   'pinecone': 'test-pinecone-integration.ts',
   'page-collection': 'test-page-collection.ts',
   'indexing-pipeline': 'test-indexing-pipeline.ts',
-  'rag-pipeline': 'test-rag-pipeline.ts'
+  'rag-pipeline': 'test-rag-pipeline.ts',
+  'html-vectorization': 'test-html-vectorization-basic.ts'
 } as const
 
 // 서버 기반 API 테스트 (별도 실행 필요)

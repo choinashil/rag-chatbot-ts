@@ -1,7 +1,6 @@
 // 문서 관련 타입 정의
 
-// 수집 방식 타입
-export type CollectionMethod = 'database' | 'page'
+import { CollectionMethod, BatchResult, ProcessingError } from './shared'
 
 export interface Document {
   readonly id: string
@@ -41,10 +40,9 @@ export interface ProcessingResult {
   processedPages: number
   skippedPages: number
   totalVectors: number
-  errors: Array<{
-    pageId: string
-    title: string
-    error: string
-  }>
+  errors: ProcessingError[]
   discoveredDatabases: string[]
 }
+
+// 공통 타입들은 shared.ts에서 import하고 re-export함
+export type { BatchResult, CollectionMethod } from './shared'

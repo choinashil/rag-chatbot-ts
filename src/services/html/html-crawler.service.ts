@@ -7,6 +7,7 @@ import type {
   PageLink,
   CrawlMetadata 
 } from '../../types/html'
+import type { DocumentProcessor } from '../document/document.processor'
 import { CRAWL_CONSTANTS, DEFAULT_CRAWL_OPTIONS } from './html.constants'
 import * as cheerio from 'cheerio'
 import { URL } from 'url'
@@ -26,6 +27,12 @@ export class HtmlCrawlerService extends HtmlService {
   /** 시작 페이지의 breadcrumb 깊이
    * 상대 깊이 계산 기준점으로 사용 */
   private startBreadcrumbDepth: number = 0
+
+  constructor(
+    private documentProcessor?: DocumentProcessor  // 선택적 의존성
+  ) {
+    super()
+  }
   
   /**
    * 사이트 크롤링 시작
@@ -63,6 +70,26 @@ export class HtmlCrawlerService extends HtmlService {
       session.status = 'completed'
       console.log('─'.repeat(80))
       console.log(`✅ 크롤링 완료: ${session.statistics.processedPages}개 페이지 처리`)
+      
+      // 자동 벡터화 처리
+      if (crawlOptions.autoVectorize && this.documentProcessor) {
+        console.log('')
+        console.log('🧠 자동 벡터화 시작...')
+        console.log('─'.repeat(80))
+        
+        try {
+          const documents = this.getCrawledDocuments()
+          const vectorResult = await this.documentProcessor.processHtmlDocuments(documents)
+          
+          // 세션에 벡터화 결과 추가
+          session.vectorizationResult = vectorResult
+          console.log('─'.repeat(80))
+          console.log(`🎉 벡터화 완료: ${vectorResult.processed}개 성공, ${vectorResult.failed}개 실패`)
+        } catch (vectorError) {
+          console.error('❌ 벡터화 실패:', vectorError)
+          // 벡터화 실패해도 크롤링 세션은 유지
+        }
+      }
       
     } catch (error) {
       console.error(`❌ 크롤링 실패:`, error)

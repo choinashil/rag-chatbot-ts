@@ -1,3 +1,5 @@
+import { BatchResult } from './shared'
+
 export interface SimpleDocument {
   url: string
   title: string
@@ -53,6 +55,7 @@ export interface CrawlOptions {
   crawlDelay: number
   concurrency: number
   includeParentPages: boolean  // 시작 페이지보다 상위 레벨 페이지 크롤링 여부
+  autoVectorize?: boolean      // 자동 벡터화 옵션
 }
 
 export interface CrawlSession {
@@ -62,6 +65,7 @@ export interface CrawlSession {
   startTime: string
   status: 'running' | 'completed' | 'error' | 'stopped'
   statistics: CrawlStatistics
+  vectorizationResult?: BatchResult  // 벡터화 결과
 }
 
 export interface CrawlStatistics {
