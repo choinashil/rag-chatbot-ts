@@ -13,8 +13,6 @@ export class HtmlService {
       retryCount = HTML_PARSING_CONSTANTS.MAX_RETRY_COUNT,
       userAgent = HTML_PARSING_CONSTANTS.USER_AGENT
     } = options || {}
-
-    console.log(`🌐 페이지 수집 시작: ${url}`)
     
     let lastError: Error | null = null
     
@@ -26,8 +24,7 @@ export class HtmlService {
             'User-Agent': userAgent
           }
         })
-        
-        console.log(`✅ 페이지 수집 완료: ${response.data.length}자`)
+
         return response.data
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('알 수 없는 오류')
@@ -39,7 +36,7 @@ export class HtmlService {
       }
     }
     
-    console.error(`❌ 페이지 수집 최종 실패: ${url}`, lastError)
+    console.error(`    ❌ 페이지 수집 최종 실패: ${url}`, lastError)
     throw new Error(`페이지 수집에 실패했습니다: ${lastError?.message || '알 수 없는 오류'}`)
   }
 
@@ -52,8 +49,6 @@ export class HtmlService {
       unnecessaryTags = HTML_PARSING_CONSTANTS.UNNECESSARY_TAGS,
       includeTitle = true
     } = options || {}
-
-    console.log(`📄 텍스트 추출 시작`)
     
     const $ = cheerio.load(html)
     
@@ -94,8 +89,8 @@ export class HtmlService {
       timestamp: new Date().toISOString()
     }
     
-    console.log(`✅ 텍스트 추출 완료: ${processedContent.length}자`)
-    console.log(`📍 breadcrumb: ${breadcrumb.join(' > ')}`)
+    console.log(`  ✅ 텍스트 추출 완료: ${processedContent.length}자`)
+    console.log(`  📍 breadcrumb: ${breadcrumb.join(' > ')}`)
     return result
   }
 
@@ -108,15 +103,12 @@ export class HtmlService {
     parsingOptions?: HtmlParsingOptions
   ): Promise<SimpleDocument> {
     try {
-      console.log(`🔄 URL 문서 추출 시작: ${url}`)
+      console.log(`\n🔄 URL 문서 추출 시작: ${url}`)
       
       const html = await this.fetchPage(url, fetchOptions)
-      const document = this.extractText(html, url, parsingOptions)
-      
-      console.log(`✅ URL 문서 추출 완료: ${document.title}`)
-      return document
+      return this.extractText(html, url, parsingOptions)
     } catch (error) {
-      console.error(`❌ URL 문서 추출 실패: ${url}`, error)
+      console.error(`  ❌ URL 문서 추출 실패: ${url}`, error)
       throw new Error(`URL 문서 추출에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
     }
   }

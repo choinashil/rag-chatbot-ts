@@ -21,7 +21,8 @@
     "collect:mixed": "tsx scripts/collect-mixed.ts",
     "clear:vectors": "tsx scripts/clear-vectors.ts",
     "show:vectors": "tsx scripts/show-vectors.ts",
-    "parse:html": "tsx scripts/html-parser.ts"
+    "parse:html": "tsx scripts/html-parser.ts",
+    "crawl": "tsx scripts/multi-page-crawler.ts"
   },
   "keywords": [
     "rag",

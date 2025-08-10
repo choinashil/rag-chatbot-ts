@@ -381,8 +381,10 @@ describe('클래스명 또는 기능명', () => {
 
 #### 테스트 명령어
 - `npm test`: 모든 테스트 실행
-- `npm run test:watch`: 파일 변경 시 자동 재실행
-- `npm run test:coverage`: 커버리지 포함 테스트 실행
+- `npm test:unit`: 모든 단위 테스트 실행
+- `npm test:unit:watch`: 단위 테스트 실행 (파일 변경 시 자동 재실행)
+- `npm test:unit:coverage`: 단위 테스트 커버리지 확인
+- `npm test:integration`: 모든 통합 테스트 실행
 
 #### 모킹 규칙
 - **외부 라이브러리**: `jest.mock()` 사용
