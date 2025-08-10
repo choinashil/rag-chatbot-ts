@@ -171,10 +171,9 @@ export class HtmlCrawlerService extends HtmlService {
       
       console.log(`  📄 처리 중: ${simpleDocument.title} (상대깊이: ${relativeDepth}, 탐색깊이: ${depth})`)
       
-      // 부모/형제 페이지 크롤링 제한 확인 (시작 페이지 제외, 상대깊이 ≤ 0이면 부모/형제 페이지)
-      if (relativeDepth <= 0 && depth > 0 && !session.options.includeParentPages) {
-        const pageType = relativeDepth < 0 ? '부모' : '형제'
-        console.log(`  ⚠️ ${pageType} 페이지 스킵 (상대깊이: ${relativeDepth})`)
+      // 부모 페이지 크롤링 제한 확인 (시작 페이지 제외, 형제 페이지는 허용)
+      if (relativeDepth < 0 && depth > 0 && !session.options.includeParentPages) {
+        console.log(`  ⚠️ 부모 페이지 스킵 (상대깊이: ${relativeDepth})`)
         session.statistics.skippedPages++
         return null
       }
