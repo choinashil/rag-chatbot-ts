@@ -91,9 +91,15 @@ export class OopyParser implements HtmlParserStrategy {
         ? parts.slice(1).join(OOPY_CONSTANTS.CONTENT_SEPARATOR).trim()
         : content.trim()
       
+      // 제목 중복 제거: content 시작이 title과 같으면 제거
+      let cleanedContent = mainContent.replace(/\s+/g, ' ').trim()
+      if (cleanedContent.startsWith(staticResult.title)) {
+        cleanedContent = cleanedContent.slice(staticResult.title.length).trim()
+      }
+      
       return {
         title: staticResult.title,
-        content: mainContent.replace(/\s+/g, ' ').trim(),
+        content: cleanedContent,
         breadcrumb: staticResult.breadcrumb
       }
     }
@@ -123,9 +129,15 @@ export class OopyParser implements HtmlParserStrategy {
           .filter(item => item.length > 0)
       : []
     
+    // 제목 중복 제거: content 시작이 title과 같으면 제거  
+    let cleanedContent = mainContent.replace(/\s+/g, ' ').trim()
+    if (cleanedContent.startsWith(title)) {
+      cleanedContent = cleanedContent.slice(title.length).trim()
+    }
+    
     return {
       title,
-      content: mainContent.replace(/\s+/g, ' ').trim(),
+      content: cleanedContent,
       breadcrumb
     }
   }

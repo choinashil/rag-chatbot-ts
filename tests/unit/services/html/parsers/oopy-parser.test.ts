@@ -343,5 +343,22 @@ describe('OopyParser', () => {
       expect(result.breadcrumb).toEqual(['실제', '경로', '정보'])
       expect(result.content).toBe('동적으로 확장된 새로운 콘텐츠')
     })
+
+    test('content에서 제목 중복 제거 기능', () => {
+      const originalHtml = `
+        <html>
+          <head><title>최상단 배너 설정하기</title></head>
+          <body>홈 > 웹사이트 디자인 > 배너 Search 기존 내용</body>
+        </html>
+      `
+      const dynamicContent = 'Search 최상단 배너 설정하기 공지 사항이나 이벤트를 안내할 때 띠배너 섹션을 활용해 보세요'
+      const url = 'https://example.com'
+      
+      const result = parser.parseDynamicContent(dynamicContent, url, undefined, originalHtml)
+      
+      expect(result.title).toBe('최상단 배너 설정하기')
+      expect(result.content).toBe('공지 사항이나 이벤트를 안내할 때 띠배너 섹션을 활용해 보세요')
+      expect(result.content).not.toContain('최상단 배너 설정하기')
+    })
   })
 })
