@@ -360,5 +360,46 @@ describe('OopyParser', () => {
       expect(result.content).toBe('공지 사항이나 이벤트를 안내할 때 띠배너 섹션을 활용해 보세요')
       expect(result.content).not.toContain('최상단 배너 설정하기')
     })
+
+    test('og:url 메타태그 추출 기능', () => {
+      const html = `
+        <html>
+          <head>
+            <title>페이지 제목</title>
+            <meta property="og:url" content="https://help.pro.sixshop.com/design/products">
+          </head>
+          <body>
+            홈 / 디자인Search
+            페이지 콘텐츠입니다.
+          </body>
+        </html>
+      `
+      
+      const result = parser.extractContent(html)
+      
+      expect(result.title).toBe('페이지 제목')
+      expect(result.breadcrumb).toEqual(['홈', '디자인'])
+      expect(result.content).toBe('페이지 콘텐츠입니다.')
+      expect(result.ogUrl).toBe('https://help.pro.sixshop.com/design/products')
+    })
+
+    test('og:url이 없을 때는 ogUrl 필드가 없음', () => {
+      const html = `
+        <html>
+          <head><title>일반 페이지</title></head>
+          <body>
+            홈Search
+            일반 콘텐츠입니다.
+          </body>
+        </html>
+      `
+      
+      const result = parser.extractContent(html)
+      
+      expect(result.title).toBe('일반 페이지')
+      expect(result.breadcrumb).toEqual(['홈'])
+      expect(result.content).toBe('일반 콘텐츠입니다.')
+      expect(result.ogUrl).toBeUndefined()
+    })
   })
 })

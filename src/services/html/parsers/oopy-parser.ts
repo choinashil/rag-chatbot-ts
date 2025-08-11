@@ -29,9 +29,9 @@ export class OopyParser implements HtmlParserStrategy {
 
     // HTML 내용 기반 검사 (oopy 고유 요소들)
     return html.includes('window.__OOPY__') ||
-           html.includes('oopy.lazyrockets.com') ||
-           html.includes('oopy-footer') ||
-           html.includes('OopyFooter_container')
+          html.includes('oopy.lazyrockets.com') ||
+          html.includes('oopy-footer') ||
+          html.includes('OopyFooter_container')
   }
 
   /**
@@ -70,7 +70,12 @@ export class OopyParser implements HtmlParserStrategy {
     content: string
     breadcrumb: string[]
   } {
-    return this.extractContent(html)
+    const extracted = this.extractContent(html)
+    return {
+      title: extracted.title,
+      content: extracted.content,
+      breadcrumb: extracted.breadcrumb
+    }
   }
 
   /**
@@ -150,8 +155,12 @@ export class OopyParser implements HtmlParserStrategy {
     title: string
     content: string  
     breadcrumb: string[]
+    ogUrl?: string
   } {
     const $ = cheerio.load(html)
+    
+    // og:url 메타태그에서 커스텀 URL 추출
+    const ogUrl = $('meta[property="og:url"]').attr('content')
     
     // 불필요한 요소 제거
     $('script, style, nav, footer, aside').remove()
@@ -173,7 +182,8 @@ export class OopyParser implements HtmlParserStrategy {
       return {
         title,
         content: '',
-        breadcrumb: []
+        breadcrumb: [],
+        ...(ogUrl && { ogUrl })
       }
     }
     
@@ -196,7 +206,8 @@ export class OopyParser implements HtmlParserStrategy {
     return {
       title,
       content: processedContent,
-      breadcrumb
+      breadcrumb,
+      ...(ogUrl && { ogUrl })
     }
   }
 

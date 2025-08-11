@@ -338,4 +338,68 @@ describe('HtmlService', () => {
       expect(result.breadcrumb).toEqual([])
     })
   })
+
+  describe('커스텀 URL 추출', () => {
+    test('og:url이 있을 때 커스텀 URL 사용', async () => {
+      const testUrl = 'https://internal-url.oopy.io/uuid-123'
+      const htmlWithOgUrl = `
+        <html>
+          <head>
+            <title>테스트 페이지</title>
+            <meta property="og:url" content="https://help.pro.sixshop.com/design/products">
+          </head>
+          <body>
+            홈 / 디자인Search
+            커스텀 도메인 적용된 페이지입니다.
+          </body>
+        </html>
+      `
+
+      mockedAxios.get.mockResolvedValue({ data: htmlWithOgUrl })
+
+      const result = await htmlService.parseUrl(testUrl)
+
+      expect(result.url).toBe('https://help.pro.sixshop.com/design/products')
+      expect(result.title).toBe('테스트 페이지')
+    })
+
+    test('og:url이 없을 때 원본 URL 사용', async () => {
+      const testUrl = 'https://help.pro.sixshop.com/normal-page'
+      const normalHtml = `
+        <html>
+          <head><title>일반 페이지</title></head>
+          <body>
+            홈Search
+            일반 페이지입니다.
+          </body>
+        </html>
+      `
+
+      mockedAxios.get.mockResolvedValue({ data: normalHtml })
+
+      const result = await htmlService.parseUrl(testUrl)
+
+      expect(result.url).toBe(testUrl)
+      expect(result.title).toBe('일반 페이지')
+    })
+
+    test('잘못된 형식의 og:url은 무시', async () => {
+      const testUrl = 'https://example.com/test'
+      const malformedHtml = `
+        <html>
+          <head>
+            <title>테스트</title>
+            <meta property="og:url" content="">
+          </head>
+          <body>홈Search테스트</body>
+        </html>
+      `
+
+      mockedAxios.get.mockResolvedValue({ data: malformedHtml })
+
+      const result = await htmlService.parseUrl(testUrl)
+
+      expect(result.url).toBe(testUrl)
+    })
+  })
 })

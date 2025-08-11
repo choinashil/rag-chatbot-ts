@@ -110,9 +110,15 @@ export class HtmlService {
           console.log(`  ✅ 동적 크롤링 완료: ${result.content.length}자`)
           console.log(`  📍 breadcrumb: ${result.breadcrumb.join(' > ')}`)
           
+          // og:url이 있으면 og:url 사용, 없으면 원본 URL 사용
+          const ogUrl = this.extractOgUrl(html) || url
+          if (ogUrl !== url) {
+            console.log(`  🔗 og:url 적용: ${ogUrl}`)
+          }
+          
           return {
             ...result,
-            url,
+            url: ogUrl,
             wordCount: result.content.length,
             timestamp: new Date().toISOString()
           }
@@ -127,9 +133,15 @@ export class HtmlService {
       console.log(`  ✅ 정적 파싱 완료: ${result.content.length}자`)
       console.log(`  📍 breadcrumb: ${result.breadcrumb.join(' > ')}`)
       
+      // og:url이 있으면 og:url 사용, 없으면 원본 URL 사용
+      const ogUrl = this.extractOgUrl(html) || url
+      if (ogUrl !== url) {
+        console.log(`  🔗 og:url 적용: ${ogUrl}`)
+      }
+      
       return {
         ...result,
-        url,
+        url: ogUrl,
         wordCount: result.content.length,
         timestamp: new Date().toISOString()
       }
@@ -265,6 +277,23 @@ export class HtmlService {
       await this.browser.close()
       this.browser = undefined
       console.log('  🔒 브라우저 종료 완료')
+    }
+  }
+
+  /**
+   * HTML에서 og:url 메타태그를 추출하여 og:url 반환
+   */
+  private extractOgUrl(html: string): string | null {
+    try {
+      // og:url 메타태그 검색 (정규표현식 사용)
+      const ogUrlMatch = html.match(/<meta\s+property=['"]og:url['"][^>]*content=['"]([^'"]+)['"][^>]*>/i)
+      if (ogUrlMatch && ogUrlMatch[1]) {
+        return ogUrlMatch[1].trim()
+      }
+      return null
+    } catch (error) {
+      console.warn('  ⚠️ og:url 추출 실패:', error)
+      return null
     }
   }
 
