@@ -183,8 +183,8 @@ export class HtmlCrawlerService extends HtmlService {
     const startTime = Date.now()
     
     try {
-      // 기본 HTML 문서 추출
-      const simpleDocument = await this.extractFromUrl(url)
+      // 기본 HTML 문서 추출 (동적 크롤링 지원)
+      const simpleDocument = await this.parseUrl(url)
       
       // 시작 페이지인 경우 breadcrumb 깊이 저장
       if (depth === 0) {

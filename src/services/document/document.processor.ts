@@ -273,6 +273,7 @@ export class DocumentProcessor {
           content: crawledDoc.content, // 전체 내용 저장 (100개 문서에 최적)
           source: 'html',
           url: crawledDoc.url,
+          breadcrumb: crawledDoc.breadcrumb.join(' > '), // breadcrumb 추가
           timestamp: new Date().toISOString()
         }
       }

@@ -17,7 +17,7 @@ export class PineconeService {
     try {
       const index = this.client.getIndex()
       
-      await index.upsert([{
+      const upsertData = {
         id: vectorData.id,
         values: vectorData.vector,
         metadata: {
@@ -25,9 +25,12 @@ export class PineconeService {
           content: vectorData.metadata.content,
           source: vectorData.metadata.source,
           timestamp: vectorData.metadata.timestamp || new Date().toISOString(),
-          ...(vectorData.metadata.url && { url: vectorData.metadata.url })
+          ...(vectorData.metadata.url && { url: vectorData.metadata.url }),
+          ...(vectorData.metadata.breadcrumb && { breadcrumb: vectorData.metadata.breadcrumb })
         }
-      }])
+      }
+      
+      await index.upsert([upsertData])
 
       console.log(`        💾 벡터 저장 완료: ${vectorData.id}`)
     } catch (error) {
@@ -65,7 +68,8 @@ export class PineconeService {
             content: (match.metadata as any)?.content || '',
             source: (match.metadata as any)?.source || '',
             timestamp: (match.metadata as any)?.timestamp,
-            url: (match.metadata as any)?.url
+            url: (match.metadata as any)?.url,
+            breadcrumb: (match.metadata as any)?.breadcrumb
           }
         }))
 

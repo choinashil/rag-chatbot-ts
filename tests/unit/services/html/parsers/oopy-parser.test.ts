@@ -326,5 +326,22 @@ describe('OopyParser', () => {
       expect(result.breadcrumb).toEqual(['홈', '문서'])
       expect(result.content).toBe('첫 번째 Search 내용Search두 번째 내용')
     })
+
+    test('originalHtml 파라미터로 제목과 breadcrumb 추출', () => {
+      const originalHtml = `
+        <html>
+          <head><title>실제 페이지 제목</title></head>
+          <body>실제 / 경로 / 정보 Search 기존 내용</body>
+        </html>
+      `
+      const dynamicContent = 'Search 동적으로 확장된 새로운 콘텐츠'
+      const url = 'https://example.com'
+      
+      const result = parser.parseDynamicContent(dynamicContent, url, undefined, originalHtml)
+      
+      expect(result.title).toBe('실제 페이지 제목')
+      expect(result.breadcrumb).toEqual(['실제', '경로', '정보'])
+      expect(result.content).toBe('동적으로 확장된 새로운 콘텐츠')
+    })
   })
 })

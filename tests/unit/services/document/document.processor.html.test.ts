@@ -108,6 +108,7 @@ describe('DocumentProcessor - HTML 벡터화', () => {
           content: '도메인 연결은 [구매 → 연결] 순서로 이루어집니다. 아래 가이드 순서에 따라 작업해 주세요.',
           source: 'html',
           url: 'https://help.pro.sixshop.com/domain-guide',
+          breadcrumb: '홈 > 테스트',
           timestamp: expect.any(String)
         }
       })

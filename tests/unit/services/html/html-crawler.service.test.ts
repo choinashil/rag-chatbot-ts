@@ -347,8 +347,7 @@ describe('HtmlCrawlerService', () => {
       }
 
       mockedAxios.get
-        .mockResolvedValueOnce({ data: mockMainPageHtml })  // extractFromUrl 호출
-        .mockResolvedValueOnce({ data: mockMainPageHtml })  // extractLinks 호출
+        .mockResolvedValue({ data: mockMainPageHtml })  // parseUrl 및 extractLinks 호출들
 
       const session = await crawlerService.crawlSite(startUrl, options)
 

@@ -19,6 +19,7 @@ export interface VectorMetadata {
   source: string
   timestamp?: string
   url?: string
+  breadcrumb?: string
   // 페이지 기반 수집용 메타데이터
   pageUrl?: string
   pageTitle?: string

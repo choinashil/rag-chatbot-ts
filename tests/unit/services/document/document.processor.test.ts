@@ -287,6 +287,7 @@ describe('DocumentProcessor', () => {
             content: '테스트 페이지의 내용입니다. 이것은 HTML에서 추출된 텍스트입니다.',
             source: 'html',
             url: 'https://example.com/test-page',
+            breadcrumb: '홈 > 테스트',
             timestamp: expect.any(String)
           }
         })

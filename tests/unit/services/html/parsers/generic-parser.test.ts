@@ -302,7 +302,7 @@ describe('GenericParser', () => {
       
       expect(() => {
         parser.parseDynamicContent(content, url)
-      }).toThrow('GenericParser does not support dynamic crawling')
+      }).toThrow('GenericParser는 동적 크롤링을 지원하지 않습니다')
     })
 
     test('메타데이터가 있어도 에러 발생', () => {
@@ -312,7 +312,7 @@ describe('GenericParser', () => {
       
       expect(() => {
         parser.parseDynamicContent(content, url, metadata)
-      }).toThrow('GenericParser does not support dynamic crawling')
+      }).toThrow('GenericParser는 동적 크롤링을 지원하지 않습니다')
     })
   })
 })

@@ -103,7 +103,8 @@ export class HtmlService {
           const result = parser.parseDynamicContent(
             dynamicContent, 
             url, 
-            crawlingStrategy.metadata
+            crawlingStrategy.metadata,
+            html
           )
           
           console.log(`  ✅ 동적 크롤링 완료: ${result.content.length}자`)

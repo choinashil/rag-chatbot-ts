@@ -76,12 +76,29 @@ export class OopyParser implements HtmlParserStrategy {
   /**
    * 동적 크롤링으로 얻은 콘텐츠 파싱
    */
-  parseDynamicContent(content: string, url: string, metadata?: any): {
+  parseDynamicContent(content: string, url: string, metadata?: any, originalHtml?: string): {
     title: string
     content: string
     breadcrumb: string[]
   } {
-    // 동적 콘텐츠는 이미 전체 텍스트이므로 간단히 처리
+    // 원본 HTML이 있으면 정적 파싱으로 title과 breadcrumb 추출
+    if (originalHtml) {
+      const staticResult = this.extractContent(originalHtml)
+      
+      // 동적 콘텐츠에서 'Search' 기준으로 메인 콘텐츠만 추출
+      const parts = content.split(OOPY_CONSTANTS.CONTENT_SEPARATOR)
+      const mainContent = parts.length > 1 
+        ? parts.slice(1).join(OOPY_CONSTANTS.CONTENT_SEPARATOR).trim()
+        : content.trim()
+      
+      return {
+        title: staticResult.title,
+        content: mainContent.replace(/\s+/g, ' ').trim(),
+        breadcrumb: staticResult.breadcrumb
+      }
+    }
+    
+    // fallback: 원본 HTML이 없으면 기존 로직 사용
     const lines = content.trim().split('\n')
     const title = lines[0]?.trim() || '제목 없음'
     
@@ -128,7 +145,9 @@ export class OopyParser implements HtmlParserStrategy {
     $('script, style, nav, footer, aside').remove()
     
     // 제목 추출
-    const title = $('title').text().trim() || $('h1').first().text().trim() || '제목 없음'
+    const titleFromTag = $('title').text().trim()
+    const titleFromH1 = $('h1').first().text().trim()
+    const title = titleFromTag || titleFromH1 || '제목 없음'
     
     // 제목 요소를 제거한 후 전체 텍스트 추출
     $('title, h1').remove()

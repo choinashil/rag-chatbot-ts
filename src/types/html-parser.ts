@@ -59,9 +59,10 @@ export interface HtmlParserStrategy {
    * @param content 동적 크롤링된 텍스트
    * @param url 대상 URL
    * @param metadata 크롤링 메타데이터
+   * @param originalHtml 원본 HTML (title, breadcrumb 추출용)
    * @returns 파싱된 콘텐츠
    */
-  parseDynamicContent(content: string, url: string, metadata?: any): {
+  parseDynamicContent(content: string, url: string, metadata?: any, originalHtml?: string): {
     title: string
     content: string
     breadcrumb: string[]
