@@ -232,6 +232,78 @@ describe('HtmlService', () => {
     })
   })
 
+  describe('parseUrl (새로운 하이브리드 크롤링)', () => {
+    test('정적 HTML - 토글이 없은 사이트', async () => {
+      const testUrl = 'https://example.com'
+      const html = '<html><body><p>일반 콘텐츠</p></body></html>'
+      
+      mockedAxios.get.mockResolvedValue({ data: html })
+      
+      const result = await htmlService.parseUrl(testUrl)
+      
+      expect(result.url).toBe(testUrl)
+      expect(result.content).toBe('일반 콘텐츠')
+    })
+
+    test('동적 HTML - oopy 토글 사이트 (모킹)', async () => {
+      const oopyUrl = 'https://help.pro.sixshop.com.oopy.io/design'
+      const htmlWithToggles = `
+        <html><body>
+          <div class="notion-toggle-block">
+            <div role="button" aria-label="펼치기">토글 제목</div>
+          </div>
+          홈Search정적 콘텐츠
+        </body></html>
+      `
+      
+      mockedAxios.get.mockResolvedValue({ data: htmlWithToggles })
+      
+      // 브라우저 기능 모킹
+      const mockInitBrowser = jest.fn()
+      const mockFetchDynamicContent = jest.fn().mockResolvedValue('홈Search토글 콘텐츠가 포함된 동적 콘텐츠')
+      
+      // HtmlService 내부 메서드 모킹
+      jest.spyOn(htmlService as any, 'initBrowser').mockImplementation(mockInitBrowser)
+      jest.spyOn(htmlService as any, 'fetchDynamicContent').mockImplementation(mockFetchDynamicContent)
+      
+      const result = await htmlService.parseUrl(oopyUrl)
+      
+      expect(result.url).toBe(oopyUrl)
+      expect(result.content).toContain('동적 콘텐츠')
+      expect(mockFetchDynamicContent).toHaveBeenCalledWith(
+        oopyUrl,
+        expect.any(Function) // 토글 확장 함수
+      )
+    })
+
+    test('동적 크롤링 실패 시 fallback로 정적 파싱 사용', async () => {
+      const oopyUrl = 'https://help.pro.sixshop.com.oopy.io/design'
+      const htmlWithToggles = `
+        <html><body>
+          <div class="notion-toggle-block">
+            <div role="button" aria-label="펼치기">토글 제목</div>
+          </div>
+          홈Search정적 콘텐츠
+        </body></html>
+      `
+      
+      mockedAxios.get.mockResolvedValue({ data: htmlWithToggles })
+      
+      // 브라우저 기능 실패 모킹
+      const mockFetchDynamicContent = jest.fn().mockRejectedValue(new Error('브라우저 오류'))
+      jest.spyOn(htmlService as any, 'fetchDynamicContent').mockImplementation(mockFetchDynamicContent)
+      
+      const result = await htmlService.parseUrl(oopyUrl)
+      
+      expect(result.url).toBe(oopyUrl)
+      expect(result.content).toBe('정적 콘텐츠') // fallback로 정적 콘텐츠
+      expect(consoleSpy.warn).toHaveBeenCalledWith(
+        expect.stringContaining('브라우저 크롤링 실패'),
+        expect.any(Error)
+      )
+    })
+  })
+
   describe('통합 테스트', () => {
     test('복잡한 HTML 처리 - Generic Parser', async () => {
       const testUrl = 'https://example.com'

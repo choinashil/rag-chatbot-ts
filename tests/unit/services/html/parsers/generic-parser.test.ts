@@ -9,7 +9,17 @@ describe('GenericParser', () => {
 
   describe('isApplicable', () => {
     test('항상 true 반환 (fallback 파서)', () => {
-      expect(parser.isApplicable()).toBe(true)
+      const html = '<html><body>Any content</body></html>'
+      const url = 'https://example.com'
+      
+      expect(parser.isApplicable(html, url)).toBe(true)
+    })
+
+    test('빈 HTML에 대해서도 true 반환', () => {
+      const html = ''
+      const url = 'https://example.com'
+
+      expect(parser.isApplicable(html, url)).toBe(true)
     })
   })
 
@@ -207,6 +217,102 @@ describe('GenericParser', () => {
       const result = parser.extractContent(html)
 
       expect(result.breadcrumb).toEqual([])
+    })
+  })
+
+  describe('shouldUseDynamicCrawling (새로운 인터페이스)', () => {
+    test('항상 정적 크롤링 반환', () => {
+      const html = '<html><body><p>일반 콘텐츠</p></body></html>'
+      
+      const result = parser.shouldUseDynamicCrawling(html)
+      
+      expect(result.useDynamic).toBe(false)
+    })
+
+    test('토글이 있어 보이는 HTML에서도 정적 크롤링 반환', () => {
+      const html = `
+        <html><body>
+          <div class="notion-toggle-block">
+            <div role="button" aria-label="펼치기">토글 제목</div>
+          </div>
+        </body></html>
+      `
+      
+      const result = parser.shouldUseDynamicCrawling(html)
+      
+      expect(result.useDynamic).toBe(false)
+    })
+  })
+
+  describe('getDynamicCrawlingSetup (새로운 인터페이스)', () => {
+    test('undefined 반환 (동적 크롤링 미지원)', () => {
+      const result = parser.getDynamicCrawlingSetup()
+      
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('parseStaticContent (새로운 인터페이스)', () => {
+    test('정적 HTML 파싱', () => {
+      const html = `
+        <html>
+          <head><title>Generic Page</title></head>
+          <body>
+            <main>메인 콘텐츠입니다.</main>
+          </body>
+        </html>
+      `
+      const url = 'https://example.com'
+      
+      const result = parser.parseStaticContent(html, url)
+      
+      expect(result.title).toBe('Generic Page')
+      expect(result.content).toBe('메인 콘텐츠입니다.')
+      expect(result.breadcrumb).toEqual([]) // Generic parser는 breadcrumb 없음
+    })
+
+    test('불필요한 태그 제거', () => {
+      const html = `
+        <html>
+          <head><title>Test Page</title></head>
+          <body>
+            <script>alert('remove')</script>
+            <style>body { color: red; }</style>
+            <nav>Navigation</nav>
+            <footer>Footer</footer>
+            <main>실제 콘텐츠</main>
+          </body>
+        </html>
+      `
+      const url = 'https://example.com'
+      
+      const result = parser.parseStaticContent(html, url)
+      
+      expect(result.content).toBe('실제 콘텐츠')
+      expect(result.content).not.toContain('alert')
+      expect(result.content).not.toContain('Navigation')
+      expect(result.content).not.toContain('Footer')
+    })
+  })
+
+  describe('parseDynamicContent (새로운 인터페이스)', () => {
+    test('동적 크롤링 미지원 에러 발생', () => {
+      const content = '동적 콘텐츠'
+      const url = 'https://example.com'
+      
+      expect(() => {
+        parser.parseDynamicContent(content, url)
+      }).toThrow('GenericParser does not support dynamic crawling')
+    })
+
+    test('메타데이터가 있어도 에러 발생', () => {
+      const content = '동적 콘텐츠'
+      const url = 'https://example.com'
+      const metadata = { togglesExpanded: 2 }
+      
+      expect(() => {
+        parser.parseDynamicContent(content, url, metadata)
+      }).toThrow('GenericParser does not support dynamic crawling')
     })
   })
 })

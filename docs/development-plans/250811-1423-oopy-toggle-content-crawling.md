@@ -906,9 +906,13 @@ export class HtmlAnalysisUtils {
 
 ---
 
-**현재 상태**: ✅ **구현 완료**  
+**현재 상태**: ✅ **구현 완료 및 테스트 완료**  
 **완료 일시**: 2025-08-11 15:42 KST  
 **구현 결과**: oopy 토글 콘텐츠 하이브리드 크롤링 시스템 완성  
-**테스트 결과**: 100% 성공률 (4/4 테스트 케이스 통과)  
-**최종 수정일**: 2025-08-11 15:42 KST  
+**테스트 결과**: 100% 성공률 (4/4 통합 테스트 케이스 통과)  
+**유닛 테스트 상태**: ✅ 완료 (2025-08-11 16:30 KST)  
+  - OopyParser: shouldUseDynamicCrawling, parseStaticContent, parseDynamicContent 테스트 추가
+  - GenericParser: 새로운 인터페이스 메서드 테스트 추가  
+  - HtmlService: parseUrl 하이브리드 크롤링 테스트 추가
+**최종 수정일**: 2025-08-11 16:30 KST  
 **책임자**: Development Team

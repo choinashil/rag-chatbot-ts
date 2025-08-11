@@ -13,7 +13,7 @@ export class GenericParser implements HtmlParserStrategy {
   /**
    * 항상 적용 가능 (fallback 파서)
    */
-  isApplicable(): boolean {
+  isApplicable(html: string, url: string): boolean {
     return true
   }
 
