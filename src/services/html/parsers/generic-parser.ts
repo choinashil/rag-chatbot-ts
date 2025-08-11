@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio'
-import type { HtmlParserStrategy } from '../../../types/html-parser'
+import type { HtmlParserStrategy, CrawlingStrategy } from '../../../types/html-parser'
 
 /**
  * 일반 HTML 사이트용 파서
@@ -15,6 +15,42 @@ export class GenericParser implements HtmlParserStrategy {
    */
   isApplicable(): boolean {
     return true
+  }
+
+  /**
+   * 일반 사이트는 동적 크롤링 불필요
+   */
+  shouldUseDynamicCrawling(html: string): CrawlingStrategy {
+    return { useDynamic: false }
+  }
+
+  /**
+   * 일반 사이트는 동적 크롤링 설정 없음
+   */
+  getDynamicCrawlingSetup(): undefined {
+    return undefined
+  }
+
+  /**
+   * 정적 HTML에서 콘텐츠 추출
+   */
+  parseStaticContent(html: string, url: string): {
+    title: string
+    content: string
+    breadcrumb: string[]
+  } {
+    return this.extractContent(html)
+  }
+
+  /**
+   * 일반 사이트는 동적 크롤링을 지원하지 않음
+   */
+  parseDynamicContent(content: string, url: string, metadata?: any): {
+    title: string
+    content: string
+    breadcrumb: string[]
+  } {
+    throw new Error('GenericParser는 동적 크롤링을 지원하지 않습니다')
   }
 
   /**

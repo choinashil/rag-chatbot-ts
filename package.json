@@ -23,7 +23,10 @@
     "show:vectors": "tsx scripts/show-vectors.ts",
     "parse:html": "tsx scripts/html-parser.ts",
     "crawl": "tsx scripts/multi-page-crawler.ts",
-    "crawl-and-vectorize": "tsx scripts/crawl-and-vectorize-simple.ts"
+    "crawl-and-vectorize": "tsx scripts/crawl-and-vectorize-simple.ts",
+    "crawl-oopy-dynamic": "tsx scripts/test-oopy-toggle-crawling.ts",
+    "compare-crawling-methods": "tsx scripts/compare-crawling-methods.ts",
+    "test-single-url": "tsx scripts/test-single-url.ts"
   },
   "keywords": [
     "rag",
@@ -43,6 +46,7 @@
     "@notionhq/client": "^4.0.1",
     "@pinecone-database/pinecone": "^6.1.1",
     "@types/cheerio": "^0.22.35",
+    "@types/puppeteer": "^7.0.4",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.0",
     "fastify": "^4.28.1",
@@ -53,6 +57,7 @@
     "notion-to-md": "^3.1.9",
     "openai": "^5.12.0",
     "pino": "^9.4.0",
+    "puppeteer": "^24.16.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
