@@ -2,19 +2,15 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-// 정적 파일 관련 임포트 제거
 import dotenv from 'dotenv';
 
-// 환경변수 로드
-dotenv.config({ path: 'env/.env.dev' });
+dotenv.config({ path: 'env/.env.prod' });
 
-// 라우트 임포트
 import { registerHealthRoutes } from './routes/health.routes';
 import { chatRoutes } from './routes';
 import sessionChatRoutes from './routes/session-chat.routes';
 import { SERVER_CONFIG } from './constants/system.constants';
 
-// 서비스 임포트
 import { NotionService } from './services/notion/notion.service';
 import { createNotionConfig } from './config/notion';
 import { PineconeService } from './services/vector/pinecone.service';
@@ -59,8 +55,6 @@ async function buildApp(): Promise<FastifyInstance> {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
   });
-
-  // 정적 파일 서빙 제거 (별도 FE 프로젝트 예정)
 
   // 데이터베이스 초기화
   let databasePool: any = null;
