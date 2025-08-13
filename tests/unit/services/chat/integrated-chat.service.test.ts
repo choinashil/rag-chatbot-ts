@@ -1,18 +1,18 @@
 /**
  * IntegratedChatService 유닛 테스트
- * SessionService + ChatAnalyticsService + LLMMonitoringService 통합 테스트
+ * SessionService + ChatAnalyticsService + MonitoringService 통합 테스트
  */
 
 import { Pool } from 'pg'
 import { IntegratedChatService } from '../../../../src/services/chat/integrated-chat.service'
 import { SessionService } from '../../../../src/services/session/session.service'
 import { ChatAnalyticsService } from '../../../../src/services/analytics/chat-analytics.service'
-import { LLMMonitoringService } from '../../../../src/services/monitoring/llm-monitoring.service'
+import { MonitoringService } from '../../../../src/services/monitoring/monitoring.service'
 import { ChatInteractionData, SessionData } from '../../../../src/types'
 
 jest.mock('../../../../src/services/session/session.service')
 jest.mock('../../../../src/services/analytics/chat-analytics.service')
-jest.mock('../../../../src/services/monitoring/llm-monitoring.service')
+jest.mock('../../../../src/services/monitoring/monitoring.service')
 
 const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation()
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation()
@@ -22,18 +22,18 @@ describe('IntegratedChatService', () => {
   let mockPool: jest.Mocked<Pool>
   let mockSessionService: jest.Mocked<SessionService>
   let mockAnalyticsService: jest.Mocked<ChatAnalyticsService>
-  let mockMonitoringService: jest.Mocked<LLMMonitoringService>
+  let mockMonitoringService: jest.Mocked<MonitoringService>
 
   beforeEach(() => {
     mockPool = {} as jest.Mocked<Pool>
 
     mockSessionService = new SessionService(mockPool) as jest.Mocked<SessionService>
     mockAnalyticsService = new ChatAnalyticsService(mockPool) as jest.Mocked<ChatAnalyticsService>
-    mockMonitoringService = new LLMMonitoringService() as jest.Mocked<LLMMonitoringService>
+    mockMonitoringService = new MonitoringService() as jest.Mocked<MonitoringService>
 
     ;(SessionService as jest.Mock).mockImplementation(() => mockSessionService)
     ;(ChatAnalyticsService as jest.Mock).mockImplementation(() => mockAnalyticsService)
-    ;(LLMMonitoringService as jest.Mock).mockImplementation(() => mockMonitoringService)
+    ;(MonitoringService as jest.Mock).mockImplementation(() => mockMonitoringService)
 
     integratedService = new IntegratedChatService(mockPool)
   })
@@ -48,7 +48,7 @@ describe('IntegratedChatService', () => {
 
       expect(SessionService).toHaveBeenCalledWith(mockPool)
       expect(ChatAnalyticsService).toHaveBeenCalledWith(mockPool)
-      expect(LLMMonitoringService).toHaveBeenCalledWith()
+      expect(MonitoringService).toHaveBeenCalledWith()
     })
   })
 

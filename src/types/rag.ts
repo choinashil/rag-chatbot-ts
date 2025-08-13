@@ -26,6 +26,7 @@ export interface RAGMetadata {
   model: string
   timestamp: string
   tokenCount?: number
+  monitoringEnabled?: boolean
 }
 
 export interface RAGContext {

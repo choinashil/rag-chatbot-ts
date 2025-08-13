@@ -1,80 +1,47 @@
 /**
  * RAG (Retrieval-Augmented Generation) 서비스
- * LangChain 기반으로 자동 LangSmith 추적 지원
+ * LangChain 체이닝 + 추적 유지하는 RAG 기능 제공
  */
 
-import { ChatOpenAI } from '@langchain/openai'
 import { PromptTemplate } from '@langchain/core/prompts'
 import { RunnableSequence, RunnablePassthrough } from '@langchain/core/runnables'
 import { StringOutputParser } from '@langchain/core/output_parsers'
-import type { BaseMessage } from '@langchain/core/messages'
 
 import { EmbeddingService } from '../openai/embedding.service'
 import { PineconeService } from '../pinecone/pinecone.service'
+import { LLMService } from '../llm/llm.service'
+import { MonitoringService } from '../monitoring/monitoring.service'
 import type { RAGRequest, RAGResponse, RAGSource, StreamingChatRequest, StreamingEvent } from '../../types'
 import { RAG_CONFIG, RAG_MESSAGES, OPENAI_MODELS } from '../../constants'
 import { RAG_PROMPT_TEMPLATE } from '../../prompts/rag-prompts'
 
 export class RAGService {
-  private chatModel: ChatOpenAI
   private ragChain: RunnableSequence<any, any>
+  private llmService: LLMService
+  private monitoringService: MonitoringService
 
   constructor(
     private embeddingService: EmbeddingService,
     private pineconeService: PineconeService
   ) {
-    // LangSmith 환경 변수 확인 및 설정
-    this.initializeLangSmithTracking()
-    
-    // LangChain OpenAI 모델 (자동 LangSmith 추적)
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY가 설정되지 않았습니다')
-    }
-    
-    this.chatModel = new ChatOpenAI({
-      modelName: OPENAI_MODELS.CHAT,
-      temperature: RAG_CONFIG.DEFAULT_TEMPERATURE,
-      apiKey: apiKey
-    })
-
-    // RAG 체인 구성
+    // 의존성 서비스 초기화  
+    this.llmService = new LLMService()
+    this.monitoringService = new MonitoringService()
     this.ragChain = this.createRAGChain()
   }
 
-  /**
-   * LangSmith 추적 초기화 확인
-   * 
-   * 주의: LangSmith 서비스를 사용하지만 환경변수는 LANGCHAIN_XX 형식 사용
-   * 이는 LangChain의 자동 LangSmith 통합 기능이 해당 변수명을 요구하기 때문입니다.
-   */
-  private initializeLangSmithTracking() {
-    const tracingEnabled = process.env.LANGCHAIN_TRACING_V2
-    const apiKey = process.env.LANGCHAIN_API_KEY
-    const project = process.env.LANGCHAIN_PROJECT
-    
-    if (tracingEnabled === 'true' && apiKey && project) {
-      console.log('✅ LangSmith 자동 추적 활성화됨')
-    } else {
-      console.log('⚠️  LangSmith 자동 추적 비활성화됨')
-    }
-  }
 
   /**
-   * LangChain RAG 체인 생성
+   * RAG 체인 생성
    */
-  private createRAGChain() {
-    // RAG 프롬프트 템플릿
+  private createRAGChain(): RunnableSequence<any, any> {
     const ragPrompt = PromptTemplate.fromTemplate(RAG_PROMPT_TEMPLATE)
 
-    // RAG 체인 구성 (자동 LangSmith 추적)
     return RunnableSequence.from([
       {
         context: async (input: { question: string }) => {
-          // 1. 임베딩 생성
+          // 임베딩 + 벡터 검색 로직
           const embeddingResult = await this.embeddingService.createEmbedding(input.question)
-          
-          // 2. 벡터 검색
           const searchResults = await this.pineconeService.query(
             embeddingResult.embedding,
             {
@@ -83,7 +50,7 @@ export class RAGService {
             }
           )
 
-          // 3. 컨텍스트 구성
+          // 컨텍스트 구성 후 반환
           if (searchResults.length === 0) {
             return RAG_MESSAGES.NO_RESULTS
           }
@@ -95,13 +62,13 @@ export class RAGService {
         question: new RunnablePassthrough()
       },
       ragPrompt,
-      this.chatModel,
+      this.llmService.getChatModel(),
       new StringOutputParser()
     ])
   }
 
   /**
-   * 일반 RAG 질의 (기존 인터페이스 유지)
+   * LangChain 체이닝 유지
    */
   async askQuestion(request: RAGRequest): Promise<RAGResponse> {
     const startTime = Date.now()
@@ -109,37 +76,23 @@ export class RAGService {
     try {
       console.log(`RAG 질의 시작: "${request.question}"`)
 
-      // LangChain 체인 실행 (자동 LangSmith 추적)
+      // LangChain 체인 실행
       const answer = await this.ragChain.invoke({
         question: request.question
       })
 
-      // 소스 정보를 위한 별도 검색 (메타데이터용)
-      const embeddingResult = await this.embeddingService.createEmbedding(request.question)
-      const searchResults = await this.pineconeService.query(
-        embeddingResult.embedding,
-        {
-          topK: request.maxResults || RAG_CONFIG.DEFAULT_TOP_K,
-          scoreThreshold: request.scoreThreshold || RAG_CONFIG.DEFAULT_SCORE_THRESHOLD
-        }
-      )
-
-      const sources: RAGSource[] = searchResults.map(result => ({
-        id: result.id,
-        title: (result.metadata?.title && result.metadata.title.trim()) || '제목 없음',
-        content: result.metadata?.content || '',
-        score: result.score,
-        url: result.metadata?.url || ''
-      }))
+      // 소스 정보는 별도 수집
+      const sources = await this.getSourcesForQuestion(request)
 
       const response: RAGResponse = {
         answer: answer,
         sources: sources,
         metadata: {
-          totalSources: searchResults.length,
+          totalSources: sources.length,
           processingTime: Date.now() - startTime,
           model: OPENAI_MODELS.CHAT,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          monitoringEnabled: this.monitoringService.isMonitoringEnabled()
         }
       }
 
@@ -153,42 +106,56 @@ export class RAGService {
   }
 
   /**
-   * 스트리밍 RAG 질의 (임시: 일반 응답으로 변환)
-   * TODO: 추후 LangChain 스트리밍으로 개선
+   * 질문에 대한 소스 정보 수집
+   */
+  private async getSourcesForQuestion(request: RAGRequest): Promise<RAGSource[]> {
+    const embeddingResult = await this.embeddingService.createEmbedding(request.question)
+    const searchResults = await this.pineconeService.query(
+      embeddingResult.embedding,
+      {
+        topK: request.maxResults || RAG_CONFIG.DEFAULT_TOP_K,
+        scoreThreshold: request.scoreThreshold || RAG_CONFIG.DEFAULT_SCORE_THRESHOLD
+      }
+    )
+
+    return searchResults.map(result => ({
+      id: result.id,
+      title: (result.metadata?.title && result.metadata.title.trim()) || '제목 없음',
+      content: result.metadata?.content || '',
+      score: result.score,
+      url: result.metadata?.url || ''
+    }))
+  }
+
+
+  /**
+   * 스트리밍 RAG 질의 - LangChain 체인 스트리밍 사용
    */
   async* askQuestionStream(request: StreamingChatRequest): AsyncGenerator<StreamingEvent, void, unknown> {
     try {
-      yield {
-        type: 'status',
-        content: '답변 생성 중...',
-        data: { timestamp: new Date().toISOString() }
+      yield { type: 'status', content: '답변 생성 중...' }
+
+      // LangChain 체인 스트리밍
+      const stream = await this.ragChain.stream({
+        question: request.message
+      })
+
+      for await (const chunk of stream) {
+        if (chunk) {
+          yield { type: 'token', content: chunk }
+        }
       }
 
-      // 일반 askQuestion 사용 후 토큰 단위로 전송
-      const response = await this.askQuestion({ question: request.message })
-      
-      // 답변을 한 번에 전송
-      yield {
-        type: 'token',
-        content: response.answer
-      }
-
-      yield {
-        type: 'sources',
-        data: response.sources
-      }
-
-      yield {
-        type: 'done',
-        data: response.metadata
-      }
+      // 소스 정보 별도 전송
+      const sources = await this.getSourcesForQuestion({ question: request.message })
+      yield { type: 'sources', data: sources }
+      yield { type: 'done' }
 
     } catch (error) {
       console.error('스트리밍 RAG 질의 처리 실패:', error)
       yield {
-        type: 'error',
-        content: `질의를 처리할 수 없습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
-        data: { timestamp: new Date().toISOString() }
+        type: 'error', 
+        content: `질의를 처리할 수 없습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`
       }
     }
   }

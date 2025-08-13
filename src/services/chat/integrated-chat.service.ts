@@ -1,13 +1,12 @@
 /**
  * 통합 채팅 서비스
- * SessionService + ChatAnalyticsService + LLMMonitoringService 조합
- * 기존 HybridTrackingService를 대체하는 새로운 아키텍처
+ * SessionService + ChatAnalyticsService + MonitoringService 조합
  */
 
 import { Pool } from 'pg'
 import { SessionService } from '../session/session.service'
 import { ChatAnalyticsService } from '../analytics/chat-analytics.service'
-import { LLMMonitoringService } from '../monitoring/llm-monitoring.service'
+import { MonitoringService } from '../monitoring/monitoring.service'
 import type { ChatInteractionData, SessionData } from '../../types'
 
 /**
@@ -16,12 +15,12 @@ import type { ChatInteractionData, SessionData } from '../../types'
 export class IntegratedChatService {
   private sessionService: SessionService
   private analyticsService: ChatAnalyticsService
-  private monitoringService: LLMMonitoringService
+  private monitoringService: MonitoringService
 
   constructor(pool: Pool) {
     this.sessionService = new SessionService(pool)
     this.analyticsService = new ChatAnalyticsService(pool)
-    this.monitoringService = new LLMMonitoringService()
+    this.monitoringService = new MonitoringService()
   }
 
   /**

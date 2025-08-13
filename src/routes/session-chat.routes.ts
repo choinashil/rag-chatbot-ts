@@ -57,9 +57,7 @@ const sessionChatRoutes: FastifyPluginAsync = async (fastify) => {
   const embeddingService = new EmbeddingService(fastify.openaiClient!)
   const ragService = new RAGService(
     embeddingService,
-    fastify.pineconeService!,
-    new ChatService(fastify.openaiClient!),
-    fastify.openaiClient!
+    fastify.pineconeService!
   )
 
   // POST /api/session-chat/sessions - 새 세션 생성
