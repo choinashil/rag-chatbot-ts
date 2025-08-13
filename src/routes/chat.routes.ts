@@ -4,10 +4,12 @@ import { EmbeddingService } from '../services/openai/embedding.service'
 import { PineconeService } from '../services/pinecone/pinecone.service'
 import { ChatService } from '../services/openai/chat.service'
 import { OpenAIClient } from '../services/openai/openai.client'
+import { IntegratedChatService } from '../services/chat/integrated-chat.service'
 import type { StreamingChatRequest } from '../types'
 import { CHAT_CONSTANTS } from '../constants'
+import { v4 as uuidv4 } from 'uuid'
 
-// 요청 스키마 정의
+// 요청 스키마 정의 (세션 기반으로 확장)
 const StreamingChatRequestSchema = {
   type: 'object',
   required: ['message'],
@@ -16,12 +18,16 @@ const StreamingChatRequestSchema = {
       type: 'string',
       minLength: CHAT_CONSTANTS.MESSAGE_MIN_LENGTH,
       maxLength: CHAT_CONSTANTS.MESSAGE_MAX_LENGTH
-    }
+    },
+    // 선택적 세션 정보 - 기존 UI 호환성을 위해 optional
+    sessionId: { type: 'string', format: 'uuid' },
+    storeId: { type: 'string' },
+    userId: { type: 'string' }
   }
 } as const
 
 const chatRoutes: FastifyPluginAsync = async (fastify) => {
-  // RAGService 의존성 설정
+  // 서비스 의존성 설정
   const embeddingService = new EmbeddingService(fastify.openaiClient!)
   const ragService = new RAGService(
     embeddingService,
@@ -29,6 +35,10 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
     new ChatService(fastify.openaiClient!),
     fastify.openaiClient!
   )
+
+  // 세션 기반 서비스 (사용 가능한 경우)
+  const integratedChatService: IntegratedChatService | null = 
+    (fastify as any).integratedChatService || null
 
   // POST /api/chat/stream - SSE 스트리밍 채팅
   fastify.post<{
@@ -43,8 +53,25 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Body: StreamingChatRequest }>, reply: FastifyReply) => {
-    const { message } = request.body
+  }, async (request: FastifyRequest<{ Body: StreamingChatRequest & { sessionId?: string; storeId?: string; userId?: string } }>, reply: FastifyReply) => {
+    const { message, sessionId, storeId, userId } = request.body
+
+    // 세션 정보 처리
+    let currentSessionId = sessionId
+    if (integratedChatService && !currentSessionId) {
+      // 세션이 없으면 자동 생성 (기본값 사용)
+      try {
+        currentSessionId = await integratedChatService.createSession({
+          storeId: storeId || 'default-store',
+          userId: userId || 'anonymous-user',
+          metadata: { createdAt: new Date().toISOString() }
+        })
+        console.log(`자동 세션 생성: ${currentSessionId}`)
+      } catch (error) {
+        console.error('자동 세션 생성 실패:', error)
+        // 세션 생성 실패 시에도 계속 진행 (세션 없이)
+      }
+    }
 
     // SSE 헤더 설정
     reply.raw.writeHead(200, {
@@ -56,12 +83,47 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
     })
 
     try {
+      const startTime = Date.now()
+      let fullResponse = ''
+      let tokenCount = 0
+      let sources: any[] = []
+      
       // 스트리밍 시작
       const streamGenerator = ragService.askQuestionStream({ message })
 
       for await (const event of streamGenerator) {
         const eventData = JSON.stringify(event)
         reply.raw.write(`data: ${eventData}\n\n`)
+
+        // 세션 로깅을 위한 데이터 수집
+        if (event.type === 'token' && event.content) {
+          fullResponse += event.content
+        } else if (event.type === 'sources' && event.data) {
+          sources = event.data
+        } else if (event.type === 'done' && event.data) {
+          tokenCount = event.data.tokenCount || 0
+        }
+      }
+
+      // 세션 기반 로깅 (사용 가능한 경우)
+      if (integratedChatService && currentSessionId && fullResponse) {
+        try {
+          const responseTime = Date.now() - startTime
+          await integratedChatService.logChatInteraction({
+            sessionId: currentSessionId,
+            userMessage: message,
+            assistantResponse: fullResponse,
+            tokenUsage: tokenCount,
+            responseTimeMs: responseTime,
+            businessMetadata: {
+              retrievedDocsCount: sources.length,
+              relevanceScore: sources[0]?.score || 0
+            }
+          })
+          console.log(`채팅 상호작용 기록됨: ${currentSessionId}`)
+        } catch (error) {
+          console.error('채팅 상호작용 로깅 실패:', error)
+        }
       }
 
       // 스트림 종료
@@ -111,14 +173,56 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
     }
-  }, async (request: FastifyRequest<{ Body: StreamingChatRequest }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Body: StreamingChatRequest & { sessionId?: string; storeId?: string; userId?: string } }>, reply: FastifyReply) => {
     try {
-      const { message } = request.body
+      const { message, sessionId, storeId, userId } = request.body
+
+      // 세션 정보 처리
+      let currentSessionId = sessionId
+      if (integratedChatService && !currentSessionId) {
+        try {
+          currentSessionId = await integratedChatService.createSession({
+            storeId: storeId || 'default-store',
+            userId: userId || 'anonymous-user',
+            metadata: { createdAt: new Date().toISOString() }
+          })
+          console.log(`자동 세션 생성: ${currentSessionId}`)
+        } catch (error) {
+          console.error('자동 세션 생성 실패:', error)
+        }
+      }
       
-      // 기존 RAG 서비스 사용 (비스트리밍)
+      const startTime = Date.now()
+      // RAG 서비스 사용 (비스트리밍)
       const response = await ragService.askQuestion({ question: message })
+      const responseTime = Date.now() - startTime
+
+      // 세션 기반 로깅 (사용 가능한 경우)
+      if (integratedChatService && currentSessionId) {
+        try {
+          await integratedChatService.logChatInteraction({
+            sessionId: currentSessionId,
+            userMessage: message,
+            assistantResponse: response.answer,
+            tokenUsage: response.metadata?.tokenCount || 0,
+            responseTimeMs: responseTime,
+            businessMetadata: {
+              retrievedDocsCount: response.sources?.length || 0,
+              relevanceScore: response.sources?.[0]?.score || 0
+            }
+          })
+          console.log(`채팅 상호작용 기록됨: ${currentSessionId}`)
+        } catch (error) {
+          console.error('채팅 상호작용 로깅 실패:', error)
+        }
+      }
       
-      return reply.send(response)
+      return reply.send({
+        ...response,
+        sessionId: currentSessionId,
+        responseTime,
+        timestamp: new Date().toISOString()
+      })
       
     } catch (error) {
       console.error('채팅 API 에러:', error)
