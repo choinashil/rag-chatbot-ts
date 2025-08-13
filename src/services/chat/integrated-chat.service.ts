@@ -83,6 +83,13 @@ export class IntegratedChatService {
   }
 
   /**
+   * 활성 세션 찾기 (같은 사용자/스토어의 기존 세션 재사용)
+   */
+  async findActiveSession(criteria: { storeId: string; userId: string }): Promise<{ id: string } | null> {
+    return await this.sessionService.findActiveSession(criteria)
+  }
+
+  /**
    * 세션 컨텍스트 조회 (최근 메시지 포함)
    */
   async getSessionContext(sessionId: string, messageLimit: number = 5) {

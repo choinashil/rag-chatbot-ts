@@ -274,6 +274,101 @@ describe('SessionService', () => {
     })
   })
 
+  describe('findActiveSession', () => {
+    test('활성 세션이 있으면 세션 정보를 반환해야 함', async () => {
+      const criteria = {
+        storeId: 'test-store',
+        userId: 'test-user'
+      }
+      const mockSession = {
+        id: 'found-session-123'
+      }
+
+      mockClient.query.mockResolvedValue({ 
+        rows: [mockSession] 
+      })
+
+      const result = await sessionService.findActiveSession(criteria)
+
+      expect(result).toEqual({ id: 'found-session-123' })
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT id'),
+        ['test-store', 'test-user']
+      )
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE store_id = $1 AND user_id = $2'),
+        ['test-store', 'test-user']
+      )
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('AND is_active = true AND deleted_at IS NULL'),
+        ['test-store', 'test-user']
+      )
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY last_active_at DESC'),
+        ['test-store', 'test-user']
+      )
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('LIMIT 1'),
+        ['test-store', 'test-user']
+      )
+      expect(mockClient.release).toHaveBeenCalled()
+    })
+
+    test('활성 세션이 없으면 null을 반환해야 함', async () => {
+      const criteria = {
+        storeId: 'test-store',
+        userId: 'test-user'
+      }
+
+      mockClient.query.mockResolvedValue({ 
+        rows: [] 
+      })
+
+      const result = await sessionService.findActiveSession(criteria)
+
+      expect(result).toBeNull()
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT id'),
+        ['test-store', 'test-user']
+      )
+      expect(mockClient.release).toHaveBeenCalled()
+    })
+
+    test('데이터베이스 에러 시 예외를 발생시켜야 함', async () => {
+      const criteria = {
+        storeId: 'test-store',
+        userId: 'test-user'
+      }
+      const mockError = new Error('Database connection failed')
+
+      mockClient.query.mockRejectedValue(mockError)
+
+      await expect(sessionService.findActiveSession(criteria)).rejects.toThrow('Database connection failed')
+      expect(mockClient.release).toHaveBeenCalled()
+    })
+
+    test('올바른 SQL 쿼리를 실행해야 함', async () => {
+      const criteria = {
+        storeId: 'store-123',
+        userId: 'user-456'
+      }
+
+      mockClient.query.mockResolvedValue({ rows: [] })
+
+      await sessionService.findActiveSession(criteria)
+
+      // SQL 쿼리의 핵심 부분들 검증
+      const [query, params] = mockClient.query.mock.calls[0]
+      expect(query).toMatch(/SELECT id/)
+      expect(query).toMatch(/FROM chat_sessions/)
+      expect(query).toMatch(/WHERE store_id = \$1 AND user_id = \$2/)
+      expect(query).toMatch(/AND is_active = true AND deleted_at IS NULL/)
+      expect(query).toMatch(/ORDER BY last_active_at DESC/)
+      expect(query).toMatch(/LIMIT 1/)
+      expect(params).toEqual(['store-123', 'user-456'])
+    })
+  })
+
   describe('hardDeleteOldData', () => {
     test('오래된 데이터 완전 삭제를 성공적으로 수행해야 함', async () => {
       mockClient.query.mockResolvedValue({ 

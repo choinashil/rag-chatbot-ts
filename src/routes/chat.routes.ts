@@ -12,17 +12,18 @@ import { v4 as uuidv4 } from 'uuid'
 // 요청 스키마 정의 (세션 기반으로 확장)
 const StreamingChatRequestSchema = {
   type: 'object',
-  required: ['message'],
+  required: ['message', 'storeId', 'userId'],
   properties: {
     message: {
       type: 'string',
       minLength: CHAT_CONSTANTS.MESSAGE_MIN_LENGTH,
       maxLength: CHAT_CONSTANTS.MESSAGE_MAX_LENGTH
     },
-    // 선택적 세션 정보 - 기존 UI 호환성을 위해 optional
-    sessionId: { type: 'string', format: 'uuid' },
-    storeId: { type: 'string' },
-    userId: { type: 'string' }
+    // 필수 세션 정보
+    storeId: { type: 'string', minLength: 1 },
+    userId: { type: 'string', minLength: 1 },
+    // 선택적 세션 ID
+    sessionId: { type: 'string', format: 'uuid' }
   }
 } as const
 
@@ -56,20 +57,40 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
   }, async (request: FastifyRequest<{ Body: StreamingChatRequest & { sessionId?: string; storeId?: string; userId?: string } }>, reply: FastifyReply) => {
     const { message, sessionId, storeId, userId } = request.body
 
+    // 필수값 검증
+    if (!storeId || !userId) {
+      return reply.status(400).send({
+        error: 'storeId와 userId는 필수값입니다',
+        code: 'MISSING_REQUIRED_FIELDS',
+        timestamp: new Date().toISOString()
+      })
+    }
+
     // 세션 정보 처리
     let currentSessionId = sessionId
     if (integratedChatService && !currentSessionId) {
-      // 세션이 없으면 자동 생성 (기본값 사용)
+      // 기존 활성 세션이 있는지 확인 (같은 사용자/스토어)
       try {
-        currentSessionId = await integratedChatService.createSession({
-          storeId: storeId || 'default-store',
-          userId: userId || 'anonymous-user',
-          metadata: { createdAt: new Date().toISOString() }
+        const existingSession = await integratedChatService.findActiveSession({
+          storeId,
+          userId
         })
-        console.log(`자동 세션 생성: ${currentSessionId}`)
+        
+        if (existingSession) {
+          currentSessionId = existingSession.id
+          console.log(`기존 세션 재사용: ${currentSessionId}`)
+        } else {
+          // 기존 세션이 없으면 새로 생성
+          currentSessionId = await integratedChatService.createSession({
+            storeId,
+            userId,
+            metadata: { createdAt: new Date().toISOString() }
+          })
+          console.log(`새 세션 생성: ${currentSessionId}`)
+        }
       } catch (error) {
-        console.error('자동 세션 생성 실패:', error)
-        // 세션 생성 실패 시에도 계속 진행 (세션 없이)
+        console.error('세션 처리 실패:', error)
+        // 세션 처리 실패 시에도 계속 진행 (세션 없이)
       }
     }
 
@@ -177,18 +198,39 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const { message, sessionId, storeId, userId } = request.body
 
+      // 필수값 검증
+      if (!storeId || !userId) {
+        return reply.status(400).send({
+          error: 'storeId와 userId는 필수값입니다',
+          code: 'MISSING_REQUIRED_FIELDS',
+          timestamp: new Date().toISOString()
+        })
+      }
+
       // 세션 정보 처리
       let currentSessionId = sessionId
       if (integratedChatService && !currentSessionId) {
+        // 기존 활성 세션이 있는지 확인 (같은 사용자/스토어)
         try {
-          currentSessionId = await integratedChatService.createSession({
-            storeId: storeId || 'default-store',
-            userId: userId || 'anonymous-user',
-            metadata: { createdAt: new Date().toISOString() }
+          const existingSession = await integratedChatService.findActiveSession({
+            storeId,
+            userId
           })
-          console.log(`자동 세션 생성: ${currentSessionId}`)
+          
+          if (existingSession) {
+            currentSessionId = existingSession.id
+            console.log(`기존 세션 재사용: ${currentSessionId}`)
+          } else {
+            // 기존 세션이 없으면 새로 생성
+            currentSessionId = await integratedChatService.createSession({
+              storeId,
+              userId,
+              metadata: { createdAt: new Date().toISOString() }
+            })
+            console.log(`새 세션 생성: ${currentSessionId}`)
+          }
         } catch (error) {
-          console.error('자동 세션 생성 실패:', error)
+          console.error('세션 처리 실패:', error)
         }
       }
       

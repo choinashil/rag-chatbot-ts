@@ -35,6 +35,28 @@ export class SessionService {
   }
 
   /**
+   * 활성 세션 찾기 (같은 사용자/스토어의 최근 세션)
+   */
+  async findActiveSession(criteria: { storeId: string; userId: string }): Promise<{ id: string } | null> {
+    const client = await this.pool.connect()
+    
+    try {
+      const result = await client.query(`
+        SELECT id
+        FROM chat_sessions 
+        WHERE store_id = $1 AND user_id = $2 
+          AND is_active = true AND deleted_at IS NULL
+        ORDER BY last_active_at DESC
+        LIMIT 1
+      `, [criteria.storeId, criteria.userId])
+
+      return result.rows.length > 0 ? { id: result.rows[0].id } : null
+    } finally {
+      client.release()
+    }
+  }
+
+  /**
    * 세션 컨텍스트 조회 (최근 메시지 포함)
    */
   async getSessionContext(sessionId: string, messageLimit: number = 5): Promise<{
