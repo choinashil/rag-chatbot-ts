@@ -1,13 +1,13 @@
 // 문서 처리 파이프라인 - 노션 문서를 벡터로 변환하여 Pinecone에 저장
-import type { NotionService } from '../notion/notion.service'
-import type { EmbeddingService } from '../openai/embedding.service'
-import type { PineconeService } from '../vector/pinecone.service'
-import type { VectorData } from '../../types/pinecone'
-import type { NotionPage, PageCollectionOptions, PageCollectionResult } from '../../types/notion'
-import type { ProcessingResult, CollectionMethod, BatchResult } from '../../types/document'
-import type { CrawledDocument } from '../../types/html'
-import { NotionMapper } from '../notion/notion.mapper'
 import { createHash } from 'crypto'
+import type { BatchResult, CollectionMethod, ProcessingResult } from '../../types/document'
+import type { CrawledDocument } from '../../types/html'
+import type { NotionPage, PageCollectionOptions } from '../../types/notion'
+import type { VectorData } from '../../types/pinecone'
+import type { EmbeddingService } from '../embedding/embedding.service'
+import { NotionMapper } from '../notion/notion.mapper'
+import type { NotionService } from '../notion/notion.service'
+import type { PineconeService } from '../vector/pinecone.service'
 
 export class DocumentProcessor {
   constructor(

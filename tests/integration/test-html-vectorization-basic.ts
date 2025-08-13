@@ -8,16 +8,15 @@
  */
 
 import dotenv from 'dotenv'
-import { HtmlCrawlerService } from '../../src/services/html/html-crawler.service'
-import { DocumentProcessor } from '../../src/services/document/document.processor'
-import { NotionService } from '../../src/services/notion/notion.service'
-import { EmbeddingService } from '../../src/services/openai/embedding.service'
-import { OpenAIClient } from '../../src/services/openai/openai.client'
-import { PineconeService } from '../../src/services/vector/pinecone.service'
-import { PineconeClient } from '../../src/services/vector/pinecone.client'
 import { createNotionConfig } from '../../src/config/notion'
 import { createOpenAIConfig } from '../../src/config/openai'
 import { createPineconeConfig } from '../../src/config/pinecone'
+import { DocumentProcessor } from '../../src/services/document/document.processor'
+import { EmbeddingService } from '../../src/services/embedding/embedding.service'
+import { HtmlCrawlerService } from '../../src/services/html/html-crawler.service'
+import { NotionService } from '../../src/services/notion/notion.service'
+import { PineconeClient } from '../../src/services/vector/pinecone.client'
+import { PineconeService } from '../../src/services/vector/pinecone.service'
 
 // 환경변수 로드
 dotenv.config({ path: 'env/.env.integration' })
@@ -41,8 +40,7 @@ class HtmlVectorizationIntegrationTest {
     const pineconeConfig = createPineconeConfig()
 
     const notionService = new NotionService(notionConfig)
-    const openaiClient = new OpenAIClient(openaiConfig)
-    const embeddingService = new EmbeddingService(openaiClient)
+    const embeddingService = new EmbeddingService()
     const pineconeClient = new PineconeClient(pineconeConfig)
     const pineconeService = new PineconeService(pineconeClient)
     

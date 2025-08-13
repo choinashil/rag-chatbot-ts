@@ -3,11 +3,11 @@
  * 핵심 기능만 테스트하는 실용적 버전
  */
 
-import { EmbeddingService } from '../../../../src/services/openai/embedding.service'
+import { EmbeddingService } from '../../../../src/services/embedding/embedding.service'
 import { PineconeService } from '../../../../src/services/vector/pinecone.service'
 
 // 모킹만 설정하고 실제 RAGService 테스트는 통합 테스트에서 수행
-jest.mock('../../../../src/services/openai/embedding.service')
+jest.mock('../../../../src/services/embedding/embedding.service')
 jest.mock('../../../../src/services/vector/pinecone.service')
 jest.mock('../../../../src/services/llm/llm.service')
 jest.mock('../../../../src/services/monitoring/monitoring.service')

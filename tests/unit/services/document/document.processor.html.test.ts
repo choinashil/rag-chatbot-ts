@@ -1,13 +1,12 @@
 import { DocumentProcessor } from '../../../../src/services/document/document.processor'
+import { EmbeddingService } from '../../../../src/services/embedding/embedding.service'
 import { NotionService } from '../../../../src/services/notion/notion.service'
-import { EmbeddingService } from '../../../../src/services/openai/embedding.service'
 import { PineconeService } from '../../../../src/services/vector/pinecone.service'
-import type { CrawledDocument } from '../../../../src/types/html'
-import type { BatchResult } from '../../../../src/types/shared'
 import type { EmbeddingResult } from '../../../../src/types/embedding'
+import type { CrawledDocument } from '../../../../src/types/html'
 
 jest.mock('../../../../src/services/notion/notion.service')
-jest.mock('../../../../src/services/openai/embedding.service')
+jest.mock('../../../../src/services/embedding/embedding.service')
 jest.mock('../../../../src/services/vector/pinecone.service')
 
 const MockNotionService = NotionService as jest.MockedClass<typeof NotionService>

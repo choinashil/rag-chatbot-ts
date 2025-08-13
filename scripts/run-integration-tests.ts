@@ -27,8 +27,6 @@ function setupSignalHandlers() {
 // 사용 가능한 통합 테스트 목록 (서버 없이 실행 가능한 테스트들)
 const AVAILABLE_TESTS = {
   'notion': 'test-notion-integration.ts',
-  'openai': 'test-openai-integration.ts',
-  'embedding': 'test-embedding-integration.ts',  
   'pinecone': 'test-pinecone-integration.ts',
   'page-collection': 'test-page-collection.ts',
   'indexing-pipeline': 'test-indexing-pipeline.ts',

@@ -1,12 +1,9 @@
-import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
-import { RAGService } from '../services/rag/rag.service'
-import { EmbeddingService } from '../services/openai/embedding.service'
-import { PineconeService } from '../services/vector/pinecone.service'
-import { OpenAIClient } from '../services/openai/openai.client'
-import { ChatService } from '../services/chat/chat.service'
-import type { StreamingChatRequest } from '../types'
+import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify'
 import { CHAT_CONSTANTS } from '../constants'
-import { v4 as uuidv4 } from 'uuid'
+import { ChatService } from '../services/chat/chat.service'
+import { RAGService } from '../services/rag/rag.service'
+import { EmbeddingService } from '../services/embedding/embedding.service'
+import type { StreamingChatRequest } from '../types'
 
 // 요청 스키마 정의 (세션 기반으로 확장)
 const StreamingChatRequestSchema = {
@@ -28,10 +25,10 @@ const StreamingChatRequestSchema = {
 
 const chatRoutes: FastifyPluginAsync = async (fastify) => {
   // 서비스 의존성 설정
-  const embeddingService = new EmbeddingService(fastify.openaiClient!)
+  const embeddingService = new EmbeddingService()
   const ragService = new RAGService(
-    embeddingService,
-    fastify.pineconeService!
+    fastify.pineconeService!,
+    embeddingService
   )
 
   // 세션 기반 서비스 (사용 가능한 경우)

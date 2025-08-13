@@ -11,12 +11,10 @@
 import dotenv from 'dotenv'
 import { DocumentProcessor } from '../../src/services/document/document.processor'
 import { NotionService } from '../../src/services/notion/notion.service'
-import { EmbeddingService } from '../../src/services/openai/embedding.service'
+import { EmbeddingService } from '../../src/services/embedding/embedding.service'
 import { PineconeService } from '../../src/services/vector/pinecone.service'
-import { OpenAIClient } from '../../src/services/openai/openai.client'
 import { PineconeClient } from '../../src/services/vector/pinecone.client'
 import { createNotionConfig } from '../../src/config/notion'
-import { createOpenAIConfig } from '../../src/config/openai'
 import { createPineconeConfig } from '../../src/config/pinecone'
 
 // 환경변수 로드
@@ -34,10 +32,7 @@ async function testIndexingPipeline() {
     await notionService.initialize()
     console.log('✅ NotionService 초기화 완료')
 
-    const openaiConfig = createOpenAIConfig()
-    const openaiClient = new OpenAIClient(openaiConfig)
-    await openaiClient.initialize()
-    const embeddingService = new EmbeddingService(openaiClient)
+    const embeddingService = new EmbeddingService()
     console.log('✅ EmbeddingService 초기화 완료')
 
     const pineconeConfig = createPineconeConfig()
@@ -59,13 +54,13 @@ async function testIndexingPipeline() {
     const notionStatus = notionService.getStatus()
     console.log(`📋 Notion: ${notionStatus.connected ? '연결됨' : '연결 실패'}`)
     
-    const openaiStatus = openaiClient.getStatus()
-    console.log(`🤖 OpenAI: ${openaiStatus.connected ? '연결됨' : '연결 실패'}`)
+    const openaiHealthy = await embeddingService.healthCheck()
+    console.log(`🤖 OpenAI: ${openaiHealthy ? '연결됨' : '연결 실패'}`)
     
     const pineconeStatus = await pineconeClient.checkConnection()
     console.log(`🔍 Pinecone: ${pineconeStatus.connected ? '연결됨' : '연결 실패'} (벡터: ${pineconeStatus.vectorCount})`)
 
-    if (!notionStatus.connected || !openaiStatus.connected || !pineconeStatus.connected) {
+    if (!notionStatus.connected || !openaiHealthy || !pineconeStatus.connected) {
       throw new Error('일부 서비스 연결에 실패했습니다')
     }
 

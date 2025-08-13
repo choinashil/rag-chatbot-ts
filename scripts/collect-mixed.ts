@@ -13,12 +13,10 @@ import { parseEnvironment, loadEnvironment, getEnvironmentHelp } from './utils/e
 import { readFileSync } from 'fs'
 import { DocumentProcessor } from '../src/services/document/document.processor'
 import { NotionService } from '../src/services/notion/notion.service'
-import { EmbeddingService } from '../src/services/openai/embedding.service'
-import { OpenAIClient } from '../src/services/openai/openai.client'
+import { EmbeddingService } from '../src/services/embedding/embedding.service'
 import { PineconeService } from '../src/services/vector/pinecone.service'
 import { PineconeClient } from '../src/services/vector/pinecone.client'
 import { createNotionConfig } from '../src/config/notion'
-import { createOpenAIConfig } from '../src/config/openai'
 import { createPineconeConfig } from '../src/config/pinecone'
 import type { PageCollectionOptions } from '../src/types/notion'
 
@@ -187,12 +185,10 @@ async function main() {
   try {
     // 서비스 초기화
     const notionConfig = createNotionConfig()
-    const openaiConfig = createOpenAIConfig()
     const pineconeConfig = createPineconeConfig()
 
     const notionService = new NotionService(notionConfig)
-    const openaiClient = new OpenAIClient(openaiConfig)
-    const embeddingService = new EmbeddingService(openaiClient)
+    const embeddingService = new EmbeddingService()
     const pineconeClient = new PineconeClient(pineconeConfig)
     const pineconeService = new PineconeService(pineconeClient)
 

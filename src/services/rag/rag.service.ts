@@ -6,9 +6,8 @@
 import { PromptTemplate } from '@langchain/core/prompts'
 import { RunnableSequence, RunnablePassthrough } from '@langchain/core/runnables'
 import { StringOutputParser } from '@langchain/core/output_parsers'
-
-import { EmbeddingService } from '../openai/embedding.service'
 import { PineconeService } from '../vector/pinecone.service'
+import { EmbeddingService } from '../embedding/embedding.service'
 import { LLMService } from '../llm/llm.service'
 import { MonitoringService } from '../monitoring/monitoring.service'
 import type { RAGRequest, RAGResponse, RAGSource, StreamingChatRequest, StreamingEvent } from '../../types'
@@ -21,15 +20,15 @@ export class RAGService {
   private monitoringService: MonitoringService
 
   constructor(
-    private embeddingService: EmbeddingService,
-    private pineconeService: PineconeService
+    private pineconeService: PineconeService,
+    private embeddingService: EmbeddingService
   ) {
     // 의존성 서비스 초기화  
     this.llmService = new LLMService()
     this.monitoringService = new MonitoringService()
+    
     this.ragChain = this.createRAGChain()
   }
-
 
   /**
    * RAG 체인 생성
@@ -40,10 +39,12 @@ export class RAGService {
     return RunnableSequence.from([
       {
         context: async (input: { question: string }) => {
-          // 임베딩 + 벡터 검색 로직
+          // EmbeddingService를 통한 임베딩 생성
           const embeddingResult = await this.embeddingService.createEmbedding(input.question)
+          const embedding = embeddingResult.embedding
+          
           const searchResults = await this.pineconeService.query(
-            embeddingResult.embedding,
+            embedding,
             {
               topK: RAG_CONFIG.DEFAULT_TOP_K,
               scoreThreshold: RAG_CONFIG.DEFAULT_SCORE_THRESHOLD
@@ -109,9 +110,12 @@ export class RAGService {
    * 질문에 대한 소스 정보 수집
    */
   private async getSourcesForQuestion(request: RAGRequest): Promise<RAGSource[]> {
+    // EmbeddingService를 통한 임베딩 생성
     const embeddingResult = await this.embeddingService.createEmbedding(request.question)
+    const embedding = embeddingResult.embedding
+    
     const searchResults = await this.pineconeService.query(
-      embeddingResult.embedding,
+      embedding,
       {
         topK: request.maxResults || RAG_CONFIG.DEFAULT_TOP_K,
         scoreThreshold: request.scoreThreshold || RAG_CONFIG.DEFAULT_SCORE_THRESHOLD

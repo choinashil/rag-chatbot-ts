@@ -11,10 +11,8 @@
 import dotenv from 'dotenv'
 import { PineconeService } from '../../src/services/vector/pinecone.service'
 import { PineconeClient } from '../../src/services/vector/pinecone.client'
-import { EmbeddingService } from '../../src/services/openai/embedding.service'
-import { OpenAIClient } from '../../src/services/openai/openai.client'
+import { EmbeddingService } from '../../src/services/embedding/embedding.service'
 import { createPineconeConfig } from '../../src/config/pinecone'
-import { createOpenAIConfig } from '../../src/config/openai'
 import type { VectorData } from '../../src/types/pinecone'
 
 // 환경변수 로드
@@ -30,10 +28,7 @@ async function testPineconeIntegration() {
     const pineconeClient = new PineconeClient(pineconeConfig)
     const pineconeService = new PineconeService(pineconeClient)
     
-    const openaiConfig = createOpenAIConfig()
-    const openaiClient = new OpenAIClient(openaiConfig)
-    await openaiClient.initialize()
-    const embeddingService = new EmbeddingService(openaiClient)
+    const embeddingService = new EmbeddingService()
     
     console.log(`✅ Pinecone 인덱스: ${pineconeConfig.indexName}`)
     console.log('✅ OpenAI 임베딩 서비스 초기화 완료')

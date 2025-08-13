@@ -5,7 +5,7 @@
 
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 import { RAGService } from '../services/rag/rag.service'
-import { EmbeddingService } from '../services/openai/embedding.service'
+import { EmbeddingService } from '../services/embedding/embedding.service'
 // IntegratedChatService는 Fastify에서 주입됨
 import type { CreateSessionRequest, SessionChatRequest } from '../types/session-chat'
 import { CHAT_CONSTANTS, SESSION_CONSTANTS } from '../constants'
@@ -53,10 +53,10 @@ const sessionChatRoutes: FastifyPluginAsync = async (fastify) => {
   const integratedChatService = fastify.integratedChatService
   
   // RAGService 의존성 설정
-  const embeddingService = new EmbeddingService(fastify.openaiClient!)
+  const embeddingService = new EmbeddingService()
   const ragService = new RAGService(
-    embeddingService,
-    fastify.pineconeService!
+    fastify.pineconeService!,
+    embeddingService
   )
 
   // POST /api/session-chat/sessions - 새 세션 생성
