@@ -118,6 +118,10 @@ export const trackRAGMetrics = async (
   try {
     const runTree = createSessionRunTree(sessionId, 'rag_response')
     
+    // LangSmith에 RunTree 초기 제출
+    await runTree.postRun()
+    
+    // RunTree 실행 및 종료
     await runTree.end({
       inputs: { question: metrics.question },
       outputs: { 
@@ -129,7 +133,10 @@ export const trackRAGMetrics = async (
       }
     })
 
-    console.log('📊 RAG 메트릭 추적 완료:', { sessionId, responseTime: metrics.responseTimeMs })
+    // LangSmith에 최종 결과 업데이트
+    await runTree.patchRun()
+
+    console.log('📊 RAG 메트릭 추적 완료 (LangSmith 제출됨):', { sessionId, responseTime: metrics.responseTimeMs })
   } catch (error) {
     console.error('❌ RAG 메트릭 추적 실패:', error)
     // LangSmith 실패가 RAG 서비스를 중단시키면 안 됨
@@ -154,6 +161,9 @@ export const trackUserFeedback = async (
   try {
     const runTree = createSessionRunTree(feedback.sessionId, 'user_feedback')
     
+    // LangSmith에 RunTree 초기 제출
+    await runTree.postRun()
+    
     await runTree.end({
       inputs: { message_id: feedback.messageId },
       outputs: { 
@@ -163,7 +173,10 @@ export const trackUserFeedback = async (
       }
     })
 
-    console.log('💬 사용자 피드백 추적 완료:', { 
+    // LangSmith에 최종 결과 업데이트
+    await runTree.patchRun()
+
+    console.log('💬 사용자 피드백 추적 완료 (LangSmith 제출됨):', { 
       sessionId: feedback.sessionId, 
       rating: feedback.rating 
     })
