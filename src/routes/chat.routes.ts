@@ -1,5 +1,6 @@
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 import { RAGService } from '../services/rag/rag.service'
+import { LangChainRAGService } from '../services/rag/langchain-rag.service'
 import { EmbeddingService } from '../services/openai/embedding.service'
 import { PineconeService } from '../services/pinecone/pinecone.service'
 import { ChatService } from '../services/openai/chat.service'
@@ -35,6 +36,12 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.pineconeService!,
     new ChatService(fastify.openaiClient!),
     fastify.openaiClient!
+  )
+  
+  // LangChain RAG 서비스 (자동 LangSmith 추적)
+  const langchainRAGService = new LangChainRAGService(
+    embeddingService,
+    fastify.pineconeService!
   )
 
   // 세션 기반 서비스 (사용 가능한 경우)
@@ -109,8 +116,8 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
       let tokenCount = 0
       let sources: any[] = []
       
-      // 스트리밍 시작
-      const streamGenerator = ragService.askQuestionStream({ message })
+      // LangChain 스트리밍 시작 (자동 LangSmith 추적)
+      const streamGenerator = langchainRAGService.askQuestionStream({ message })
 
       for await (const event of streamGenerator) {
         const eventData = JSON.stringify(event)
@@ -236,7 +243,8 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
       
       const startTime = Date.now()
       // RAG 서비스 사용 (비스트리밍)
-      const response = await ragService.askQuestion({ question: message })
+      // LangChain RAG 서비스 사용 (자동 LangSmith 추적)
+      const response = await langchainRAGService.askQuestion({ question: message })
       const responseTime = Date.now() - startTime
 
       // 세션 기반 로깅 (사용 가능한 경우)

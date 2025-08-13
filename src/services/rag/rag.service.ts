@@ -1,3 +1,4 @@
+import { traceable } from 'langsmith/traceable'
 import { EmbeddingService } from '../openai/embedding.service'
 import { PineconeService } from '../pinecone/pinecone.service'
 import { ChatService } from '../openai/chat.service'
@@ -14,79 +15,121 @@ export class RAGService {
   ) {}
 
   async askQuestion(request: RAGRequest): Promise<RAGResponse> {
-    const startTime = Date.now()
+    return await this.askQuestionTraceable(request)
+  }
 
-    try {
-      console.log(`RAG 질의 시작: "${request.question}"`)
+  // LangSmith 추적을 위한 별도 메서드
+  private askQuestionTraceable = traceable(
+    async (request: RAGRequest): Promise<RAGResponse> => {
+      const startTime = Date.now()
 
-      // 1. 질문을 임베딩으로 변환
-      const embeddingResult = await this.embeddingService.createEmbedding(request.question)
-      console.log('질문 임베딩 생성 완료')
+      try {
+        console.log(`RAG 질의 시작: "${request.question}"`)
 
-      // 2. 관련 문서 검색
-      const searchResults = await this.pineconeService.query(
-        embeddingResult.embedding,
-        {
-          topK: request.maxResults || RAG_CONFIG.DEFAULT_TOP_K,
-          scoreThreshold: request.scoreThreshold || RAG_CONFIG.DEFAULT_SCORE_THRESHOLD
+        // 1. 질문을 임베딩으로 변환
+        const embeddingResult = await this.createEmbeddingTraceable(request.question)
+        console.log('질문 임베딩 생성 완료')
+
+        // 2. 관련 문서 검색
+        const searchResults = await this.retrieveDocumentsTraceable(
+          embeddingResult.embedding,
+          {
+            topK: request.maxResults || RAG_CONFIG.DEFAULT_TOP_K,
+            scoreThreshold: request.scoreThreshold || RAG_CONFIG.DEFAULT_SCORE_THRESHOLD
+          }
+        )
+        console.log(`관련 문서 검색 완료: ${searchResults.length}개 문서`)
+
+        // 3. 검색 결과가 없으면 기본 응답
+        if (searchResults.length === 0) {
+          return {
+            answer: RAG_MESSAGES.NO_RESULTS,
+            sources: [],
+            metadata: {
+              totalSources: 0,
+              processingTime: Date.now() - startTime,
+              model: OPENAI_MODELS.CHAT,
+              timestamp: new Date().toISOString()
+            }
+          }
         }
-      )
-      console.log(`관련 문서 검색 완료: ${searchResults.length}개 문서`)
 
-      // 3. 검색 결과가 없으면 기본 응답
-      if (searchResults.length === 0) {
-        return {
-          answer: RAG_MESSAGES.NO_RESULTS,
-          sources: [],
+        // 4. RAG 컨텍스트 구성
+        const context = this.buildContext(searchResults)
+
+        // 5. 프롬프트 생성 및 답변 요청
+        const prompt = this.buildPrompt(request.question, context)
+        const chatResponse = await this.generateAnswerTraceable({
+          messages: [
+            {
+              role: 'system',
+              content: RAG_MESSAGES.SYSTEM_PROMPT
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: RAG_CONFIG.DEFAULT_TEMPERATURE
+        })
+        console.log('답변 생성 완료')
+
+        // 6. 응답 구성
+        const response: RAGResponse = {
+          answer: chatResponse.content,
+          sources: context.sources,
           metadata: {
-            totalSources: 0,
+            totalSources: searchResults.length,
             processingTime: Date.now() - startTime,
             model: OPENAI_MODELS.CHAT,
             timestamp: new Date().toISOString()
           }
         }
+
+        console.log(`RAG 질의 완료 (${response.metadata.processingTime}ms)`)
+        return response
+
+      } catch (error) {
+        console.error('RAG 질의 처리 실패:', error)
+        throw new Error(`질의를 처리할 수 없습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
       }
-
-      // 4. RAG 컨텍스트 구성
-      const context = this.buildContext(searchResults)
-
-      // 5. 프롬프트 생성 및 답변 요청
-      const prompt = this.buildPrompt(request.question, context)
-      const chatResponse = await this.chatService.generateResponse({
-        messages: [
-          {
-            role: 'system',
-            content: RAG_MESSAGES.SYSTEM_PROMPT
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: RAG_CONFIG.DEFAULT_TEMPERATURE
-      })
-      console.log('답변 생성 완료')
-
-      // 6. 응답 구성
-      const response: RAGResponse = {
-        answer: chatResponse.content,
-        sources: context.sources,
-        metadata: {
-          totalSources: searchResults.length,
-          processingTime: Date.now() - startTime,
-          model: OPENAI_MODELS.CHAT,
-          timestamp: new Date().toISOString()
-        }
-      }
-
-      console.log(`RAG 질의 완료 (${response.metadata.processingTime}ms)`)
-      return response
-
-    } catch (error) {
-      console.error('RAG 질의 처리 실패:', error)
-      throw new Error(`질의를 처리할 수 없습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
+    },
+    { 
+      name: 'rag_pipeline',
+      run_type: 'chain' 
     }
-  }
+  )
+
+  // 개별 단계별 추적 메서드들
+  private createEmbeddingTraceable = traceable(
+    async (question: string) => {
+      return await this.embeddingService.createEmbedding(question)
+    },
+    { 
+      name: 'create_embedding',
+      run_type: 'retriever' 
+    }
+  )
+
+  private retrieveDocumentsTraceable = traceable(
+    async (embedding: number[], options: { topK: number; scoreThreshold: number }) => {
+      return await this.pineconeService.query(embedding, options)
+    },
+    { 
+      name: 'retrieve_documents',
+      run_type: 'retriever' 
+    }
+  )
+
+  private generateAnswerTraceable = traceable(
+    async (params: { messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>; temperature: number }) => {
+      return await this.chatService.generateResponse(params)
+    },
+    { 
+      name: 'generate_answer',
+      run_type: 'llm' 
+    }
+  )
 
   private buildContext(searchResults: Array<{ id: string; score: number; metadata: any }>): RAGContext {
     const sources: RAGSource[] = searchResults.map(result => ({
@@ -123,7 +166,9 @@ ${context.combinedContent}
 답변:`
   }
 
-  async* askQuestionStream(request: StreamingChatRequest): AsyncGenerator<StreamingEvent, void, unknown> {
+  // 스트리밍 메서드를 traceable로 래핑 (화살표 함수 사용)
+  askQuestionStream = traceable(
+    async function* (this: RAGService, request: StreamingChatRequest): AsyncGenerator<StreamingEvent, void, unknown> {
     const startTime = Date.now()
 
     try {
@@ -133,8 +178,8 @@ ${context.combinedContent}
         data: { timestamp: new Date().toISOString() }
       }
 
-      // 1. 질문을 임베딩으로 변환
-      const embeddingResult = await this.embeddingService.createEmbedding(request.message)
+      // 1. 질문을 임베딩으로 변환 (LangSmith 추적됨)
+      const embeddingResult = await this.createEmbeddingTraceable(request.message)
       
       yield {
         type: 'status',
@@ -230,5 +275,10 @@ ${context.combinedContent}
         data: { timestamp: new Date().toISOString() }
       }
     }
-  }
+    },
+    { 
+      name: 'rag_stream_pipeline',
+      run_type: 'chain' 
+    }
+  )
 }

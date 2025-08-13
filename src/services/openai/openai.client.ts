@@ -1,5 +1,6 @@
-// OpenAI 클라이언트 래퍼
+// OpenAI 클라이언트 래퍼 (LangSmith 통합)
 import OpenAI from 'openai'
+import { wrapOpenAI } from 'langsmith/wrappers'
 import type { OpenAIConfig, OpenAIServiceStatus } from '../../types/openai'
 import { validateOpenAIConfig } from '../../config/openai'
 
@@ -16,12 +17,19 @@ export class OpenAIClient {
     validateOpenAIConfig(config)
     
     this.config = config
-    this.client = new OpenAI({
+    
+    // LangSmith 래퍼로 OpenAI 클라이언트 생성
+    const baseClient = new OpenAI({
       apiKey: config.apiKey,
       organization: config.organization,
       timeout: config.timeout,
       maxRetries: config.maxRetries
     })
+    
+    // LangSmith 추적이 활성화된 경우 래핑
+    this.client = process.env.LANGSMITH_TRACING === 'true' 
+      ? wrapOpenAI(baseClient)
+      : baseClient
 
     this.status = {
       connected: false,
