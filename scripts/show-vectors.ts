@@ -9,8 +9,8 @@
  */
 
 import { parseEnvironment, loadEnvironment, getEnvironmentHelp } from './utils/env-loader'
-import { PineconeService } from '../src/services/pinecone/pinecone.service'
-import { PineconeClient } from '../src/services/pinecone/pinecone.client'
+import { PineconeService } from '../src/services/vector/pinecone.service'
+import { PineconeClient } from '../src/services/vector/pinecone.client'
 import { createPineconeConfig } from '../src/config/pinecone'
 
 

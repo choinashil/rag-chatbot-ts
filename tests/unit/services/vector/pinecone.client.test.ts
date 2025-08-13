@@ -1,4 +1,4 @@
-import { PineconeClient } from '../../../../src/services/pinecone/pinecone.client'
+import { PineconeClient } from '../../../../src/services/vector/pinecone.client'
 import type { PineconeConfig } from '../../../../src/types/pinecone'
 
 jest.mock('@pinecone-database/pinecone', () => ({

@@ -1,10 +1,9 @@
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 import { RAGService } from '../services/rag/rag.service'
 import { EmbeddingService } from '../services/openai/embedding.service'
-import { PineconeService } from '../services/pinecone/pinecone.service'
-import { ChatService } from '../services/openai/chat.service'
+import { PineconeService } from '../services/vector/pinecone.service'
 import { OpenAIClient } from '../services/openai/openai.client'
-import { IntegratedChatService } from '../services/chat/integrated-chat.service'
+import { ChatService } from '../services/chat/chat.service'
 import type { StreamingChatRequest } from '../types'
 import { CHAT_CONSTANTS } from '../constants'
 import { v4 as uuidv4 } from 'uuid'
@@ -36,7 +35,7 @@ const chatRoutes: FastifyPluginAsync = async (fastify) => {
   )
 
   // 세션 기반 서비스 (사용 가능한 경우)
-  const integratedChatService: IntegratedChatService | null = 
+  const integratedChatService: ChatService | null = 
     (fastify as any).integratedChatService || null
 
   // POST /api/chat/stream - SSE 스트리밍 채팅

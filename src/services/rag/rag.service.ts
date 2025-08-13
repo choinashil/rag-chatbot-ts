@@ -8,7 +8,7 @@ import { RunnableSequence, RunnablePassthrough } from '@langchain/core/runnables
 import { StringOutputParser } from '@langchain/core/output_parsers'
 
 import { EmbeddingService } from '../openai/embedding.service'
-import { PineconeService } from '../pinecone/pinecone.service'
+import { PineconeService } from '../vector/pinecone.service'
 import { LLMService } from '../llm/llm.service'
 import { MonitoringService } from '../monitoring/monitoring.service'
 import type { RAGRequest, RAGResponse, RAGSource, StreamingChatRequest, StreamingEvent } from '../../types'

@@ -1,7 +1,7 @@
 import { DocumentProcessor } from '../../../../src/services/document/document.processor'
 import type { NotionService } from '../../../../src/services/notion/notion.service'
 import type { EmbeddingService } from '../../../../src/services/openai/embedding.service'
-import type { PineconeService } from '../../../../src/services/pinecone/pinecone.service'
+import type { PineconeService } from '../../../../src/services/vector/pinecone.service'
 import type { NotionPage, PageCollectionOptions } from '../../../../src/types/notion'
 import type { VectorData } from '../../../../src/types/pinecone'
 

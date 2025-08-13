@@ -4,7 +4,7 @@
  */
 
 import { Pool } from 'pg'
-import { ChatAnalyticsService } from '../../../../src/services/analytics/chat-analytics.service'
+import { ChatAnalyticsService } from '../../../../src/services/analytics/analytics.service'
 
 describe('ChatAnalyticsService', () => {
   let analyticsService: ChatAnalyticsService

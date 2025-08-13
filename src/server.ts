@@ -19,13 +19,13 @@ import { NotionService } from './services/notion/notion.service';
 import { createNotionConfig } from './config/notion';
 import { OpenAIClient } from './services/openai/openai.client';
 import { createOpenAIConfig } from './config/openai';
-import { PineconeService } from './services/pinecone/pinecone.service';
-import { PineconeClient } from './services/pinecone/pinecone.client';
+import { PineconeService } from './services/vector/pinecone.service';
+import { PineconeClient } from './services/vector/pinecone.client';
 import { createPineconeConfig } from './config/pinecone';
 
 // 데이터베이스 및 추적 서비스 임포트
 import { createDatabasePool, checkDatabaseConnection } from './config/database';
-import { IntegratedChatService } from './services/chat/integrated-chat.service';
+import { ChatService } from './services/chat/chat.service';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000;
 
@@ -66,14 +66,14 @@ async function buildApp(): Promise<FastifyInstance> {
 
   // 데이터베이스 초기화
   let databasePool: any = null;
-  let integratedChatService: IntegratedChatService | null = null;
+  let integratedChatService: ChatService | null = null;
   
   try {
     databasePool = createDatabasePool();
     const isConnected = await checkDatabaseConnection(databasePool);
     
     if (isConnected) {
-      integratedChatService = new IntegratedChatService(databasePool);
+      integratedChatService = new ChatService(databasePool);
       console.log('✅ 통합 채팅 서비스 초기화 완료');
     } else {
       console.log('❌ 데이터베이스 연결 실패 - 통합 채팅 서비스 비활성화');

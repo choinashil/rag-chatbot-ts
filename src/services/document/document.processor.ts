@@ -1,7 +1,7 @@
 // 문서 처리 파이프라인 - 노션 문서를 벡터로 변환하여 Pinecone에 저장
 import type { NotionService } from '../notion/notion.service'
 import type { EmbeddingService } from '../openai/embedding.service'
-import type { PineconeService } from '../pinecone/pinecone.service'
+import type { PineconeService } from '../vector/pinecone.service'
 import type { VectorData } from '../../types/pinecone'
 import type { NotionPage, PageCollectionOptions, PageCollectionResult } from '../../types/notion'
 import type { ProcessingResult, CollectionMethod, BatchResult } from '../../types/document'

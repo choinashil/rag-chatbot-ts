@@ -1,24 +1,24 @@
 /**
- * IntegratedChatService 유닛 테스트
+ * ChatService 유닛 테스트
  * SessionService + ChatAnalyticsService + MonitoringService 통합 테스트
  */
 
 import { Pool } from 'pg'
-import { IntegratedChatService } from '../../../../src/services/chat/integrated-chat.service'
+import { ChatService } from '../../../../src/services/chat/chat.service'
 import { SessionService } from '../../../../src/services/session/session.service'
-import { ChatAnalyticsService } from '../../../../src/services/analytics/chat-analytics.service'
+import { ChatAnalyticsService } from '../../../../src/services/analytics/analytics.service'
 import { MonitoringService } from '../../../../src/services/monitoring/monitoring.service'
 import { ChatInteractionData, SessionData } from '../../../../src/types'
 
 jest.mock('../../../../src/services/session/session.service')
-jest.mock('../../../../src/services/analytics/chat-analytics.service')
+jest.mock('../../../../src/services/analytics/analytics.service')
 jest.mock('../../../../src/services/monitoring/monitoring.service')
 
 const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation()
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation()
 
-describe('IntegratedChatService', () => {
-  let integratedService: IntegratedChatService
+describe('ChatService', () => {
+  let integratedService: ChatService
   let mockPool: jest.Mocked<Pool>
   let mockSessionService: jest.Mocked<SessionService>
   let mockAnalyticsService: jest.Mocked<ChatAnalyticsService>
@@ -35,7 +35,7 @@ describe('IntegratedChatService', () => {
     ;(ChatAnalyticsService as jest.Mock).mockImplementation(() => mockAnalyticsService)
     ;(MonitoringService as jest.Mock).mockImplementation(() => mockMonitoringService)
 
-    integratedService = new IntegratedChatService(mockPool)
+    integratedService = new ChatService(mockPool)
   })
 
   afterEach(() => {
@@ -44,7 +44,7 @@ describe('IntegratedChatService', () => {
 
   describe('constructor', () => {
     test('모든 서비스가 올바르게 초기화되어야 함', () => {
-      const service = new IntegratedChatService(mockPool)
+      const service = new ChatService(mockPool)
 
       expect(SessionService).toHaveBeenCalledWith(mockPool)
       expect(ChatAnalyticsService).toHaveBeenCalledWith(mockPool)

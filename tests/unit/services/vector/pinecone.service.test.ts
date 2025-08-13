@@ -1,8 +1,8 @@
-import { PineconeService } from '../../../../src/services/pinecone/pinecone.service'
-import { PineconeClient } from '../../../../src/services/pinecone/pinecone.client'
+import { PineconeService } from '../../../../src/services/vector/pinecone.service'
+import { PineconeClient } from '../../../../src/services/vector/pinecone.client'
 import type { VectorData } from '../../../../src/types/pinecone'
 
-jest.mock('../../../../src/services/pinecone/pinecone.client')
+jest.mock('../../../../src/services/vector/pinecone.client')
 const MockPineconeClient = PineconeClient as jest.MockedClass<typeof PineconeClient>
 
 describe('PineconeService', () => {

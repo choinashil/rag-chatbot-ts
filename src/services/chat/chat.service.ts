@@ -5,14 +5,14 @@
 
 import { Pool } from 'pg'
 import { SessionService } from '../session/session.service'
-import { ChatAnalyticsService } from '../analytics/chat-analytics.service'
+import { ChatAnalyticsService } from '../analytics/analytics.service'
 import { MonitoringService } from '../monitoring/monitoring.service'
 import type { ChatInteractionData, SessionData } from '../../types'
 
 /**
  * 통합 채팅 서비스
  */
-export class IntegratedChatService {
+export class ChatService {
   private sessionService: SessionService
   private analyticsService: ChatAnalyticsService
   private monitoringService: MonitoringService

@@ -6,7 +6,6 @@
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 import { RAGService } from '../services/rag/rag.service'
 import { EmbeddingService } from '../services/openai/embedding.service'
-import { ChatService } from '../services/openai/chat.service'
 // IntegratedChatService는 Fastify에서 주입됨
 import type { CreateSessionRequest, SessionChatRequest } from '../types/session-chat'
 import { CHAT_CONSTANTS, SESSION_CONSTANTS } from '../constants'

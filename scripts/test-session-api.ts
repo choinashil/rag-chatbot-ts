@@ -6,7 +6,7 @@
 import dotenv from 'dotenv'
 import path from 'path'
 import { createDatabasePool, checkDatabaseConnection } from '../src/config/database'
-import { IntegratedChatService } from '../src/services/chat/integrated-chat.service'
+import { ChatService } from '../src/services/chat/chat.service'
 
 // 환경변수 로드
 dotenv.config({ path: path.join(__dirname, '../env/.env.dev') })
@@ -24,10 +24,10 @@ async function testSessionAPI() {
     process.exit(1)
   }
   
-  // 2. IntegratedChatService 초기화
-  console.log('\n2️⃣ IntegratedChatService 초기화')
-  const trackingService = new IntegratedChatService(pool)
-  console.log('✅ IntegratedChatService 초기화 완료')
+  // 2. ChatService 초기화
+  console.log('\n2️⃣ ChatService 초기화')
+  const trackingService = new ChatService(pool)
+  console.log('✅ ChatService 초기화 완료')
   
   try {
     // 3. 새 세션 생성 테스트
