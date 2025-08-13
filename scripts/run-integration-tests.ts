@@ -38,7 +38,8 @@ const AVAILABLE_TESTS = {
 
 // 서버 기반 API 테스트 (별도 실행 필요)
 const SERVER_TESTS = {
-  'streaming-api': 'test-streaming-api.ts'
+  'streaming-api': 'test-streaming-api.ts',
+  'session-chat-api': 'test-session-chat-api.ts'
 } as const
 
 type TestName = keyof typeof AVAILABLE_TESTS
@@ -65,7 +66,8 @@ ${Object.keys(SERVER_TESTS).map(name => `  - ${name} (서버 실행 후 개별 �
   
 서버 기반 테스트 실행:
   npm run dev                             # 서버 실행 (별도 터미널)
-  tsx tests/integration/test-streaming-api.ts  # API 테스트 실행
+  tsx tests/integration/test-streaming-api.ts   # 스트리밍 API 테스트 실행
+  tsx tests/integration/test-session-chat-api.ts # 세션 채팅 API 테스트 실행
 `)
 }
 

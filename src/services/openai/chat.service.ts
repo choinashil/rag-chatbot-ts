@@ -39,6 +39,7 @@ export class ChatService {
         throw new Error('OpenAI 응답에 내용이 없습니다')
       }
 
+      // OpenAI API 응답에서 실제 토큰 사용량 추출 (tiktoken보다 정확함)
       return {
         content: choice.message.content,
         finishReason: choice.finish_reason || 'unknown',

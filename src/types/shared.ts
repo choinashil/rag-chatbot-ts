@@ -27,3 +27,34 @@ export interface BatchError {
   title: string
   error: string
 }
+
+/**
+ * 메시지 역할 타입
+ */
+export type MessageRole = 'user' | 'assistant' | 'system'
+
+/**
+ * 비즈니스 메타데이터 (공통)
+ */
+export interface BusinessMetadata {
+  inquiryCategory?: string | undefined      // "배송문의", "환불문의"
+  satisfactionScore?: number | undefined    // 1-5 만족도
+  resolutionStatus?: string | undefined     // "해결됨", "미해결"
+  storeTier?: string | undefined           // "프리미엄", "베이직"
+  topicTags?: string[] | undefined         // ["결제", "배송", "환불"]
+  priority?: string | undefined            // "긴급", "보통", "낮음"
+  retrievedDocsCount?: number | undefined  // 검색된 문서 수
+  relevanceScore?: number | undefined      // 검색 관련성 점수
+}
+
+/**
+ * 기본 채팅 상호작용 데이터
+ */
+export interface BaseChatInteraction {
+  sessionId: string
+  userMessage: string
+  assistantResponse: string
+  tokenUsage?: number | undefined
+  responseTimeMs?: number | undefined
+  langsmithTraceId?: string | undefined
+}

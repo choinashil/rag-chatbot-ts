@@ -11,9 +11,10 @@ dotenv.config({ path: 'env/.env.dev' });
 // 라우트 임포트
 import { registerHealthRoutes } from './routes/health.routes';
 import { chatRoutes } from './routes';
+import sessionChatRoutes from './routes/session-chat.routes';
 import { SERVER_CONFIG } from './constants/system.constants';
 
-// 서비스 임포트 (테스트용)
+// 서비스 임포트
 import { NotionService } from './services/notion/notion.service';
 import { createNotionConfig } from './config/notion';
 import { OpenAIClient } from './services/openai/openai.client';
@@ -21,6 +22,10 @@ import { createOpenAIConfig } from './config/openai';
 import { PineconeService } from './services/pinecone/pinecone.service';
 import { PineconeClient } from './services/pinecone/pinecone.client';
 import { createPineconeConfig } from './config/pinecone';
+
+// 데이터베이스 및 추적 서비스 임포트
+import { createDatabasePool, checkDatabaseConnection } from './config/database';
+import { IntegratedChatService } from './services/chat/integrated-chat.service';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000;
 
@@ -59,7 +64,25 @@ async function buildApp(): Promise<FastifyInstance> {
 
   // 정적 파일 서빙 제거 (별도 FE 프로젝트 예정)
 
-  // 서비스 초기화 (테스트용)
+  // 데이터베이스 초기화
+  let databasePool: any = null;
+  let integratedChatService: IntegratedChatService | null = null;
+  
+  try {
+    databasePool = createDatabasePool();
+    const isConnected = await checkDatabaseConnection(databasePool);
+    
+    if (isConnected) {
+      integratedChatService = new IntegratedChatService(databasePool);
+      console.log('✅ 통합 채팅 서비스 초기화 완료');
+    } else {
+      console.log('❌ 데이터베이스 연결 실패 - 통합 채팅 서비스 비활성화');
+    }
+  } catch (error) {
+    console.log('데이터베이스 초기화 건너뜀 (환경변수 미설정):', (error as Error).message);
+  }
+
+  // 서비스 초기화
   let notionService: NotionService | null = null;
   try {
     const notionConfig = createNotionConfig();
@@ -89,6 +112,12 @@ async function buildApp(): Promise<FastifyInstance> {
   }
 
   // 서비스를 라우트에서 사용할 수 있도록 설정
+  if (databasePool) {
+    app.decorate('databasePool', databasePool);
+  }
+  if (integratedChatService) {
+    app.decorate('integratedChatService', integratedChatService);
+  }
   if (notionService) {
     app.decorate('notionService', notionService);
   }
@@ -102,6 +131,14 @@ async function buildApp(): Promise<FastifyInstance> {
   // 라우트 등록
   await app.register(registerHealthRoutes, { prefix: '/api' });
   await app.register(chatRoutes, { prefix: '/api/chat' });
+  
+  // 세션 기반 채팅 라우트 (통합 채팅 서비스가 있을 때만)
+  if (integratedChatService) {
+    await app.register(sessionChatRoutes, { prefix: '/api/session-chat' });
+    console.log('✅ 세션 기반 채팅 API 활성화');
+  } else {
+    console.log('⚠️  세션 기반 채팅 API 비활성화 (데이터베이스 연결 필요)');
+  }
 
   return app;
 }

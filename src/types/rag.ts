@@ -25,6 +25,7 @@ export interface RAGMetadata {
   processingTime: number
   model: string
   timestamp: string
+  tokenCount?: number
 }
 
 export interface RAGContext {

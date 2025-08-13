@@ -5,7 +5,7 @@ export interface StreamingChatRequest {
 }
 
 export interface StreamingEvent {
-  type: 'status' | 'token' | 'sources' | 'done' | 'error'
+  type: 'status' | 'token' | 'content' | 'sources' | 'done' | 'error'
   content?: string
   data?: any
 }
